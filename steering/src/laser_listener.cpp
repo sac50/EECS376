@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <cwru_base/Pose.h>
 #include <sensor_msgs/LaserScan.h>
-#include <laser_listener/obstacle.h>
+#include <steering/obstacle.h>
 #include <iostream>
 
 #define HZ 100
@@ -23,7 +23,7 @@ bool holla = false;
 bool inDeBox(int theta, float r)
 {
 
-    laser_listener::obstacle referenceMsg; //this is used to get the constants from the message
+    steering::obstacle referenceMsg; //this is used to get the constants from the message
     bool result = false;
 
     if(abs(r*sin(theta*D2R))<referenceMsg.boxLength) //abs() hack for negative values ...
@@ -91,9 +91,9 @@ int main(int argc, char **argv)
     
     ros::Subscriber sub = n.subscribe("base_scan",1,laserCallback);
 
-    ros::Publisher pub = n.advertise<laser_listener::obstacle>("obstructions", 10);
+    ros::Publisher pub = n.advertise<steering::obstacle>("obstructions", 10);
     
-    laser_listener::obstacle obstacleMsg;
+    steering::obstacle obstacleMsg;
 
     //ros::spin();
     while(!ros::Time::isValid())

@@ -3,7 +3,7 @@
 #include<std_msgs/Bool.h>
 #include<math.h>
 #include <cwru_base/Pose.h>
-#include <laser_listener/obstacle.h>
+#include <steering/obstacle.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
 
 #define HALF_PI 1.6079633
@@ -32,7 +32,7 @@ void poseCallback(const cwru_base::Pose::ConstPtr& pose) {
 //	cout << pose->x << " | " << pose->y << endl;
 }
 
-void obstructionsCallback(const laser_listener::obstacle::ConstPtr& obs) {
+void obstructionsCallback(const steering::obstacle::ConstPtr& obs) {
 /*	if(obs->nearestObstacle < segDistLeft){
 		obstacle = obs->obstacle;
 	}
