@@ -5,6 +5,12 @@
 #include <cwru_base/Pose.h>
 #include <steering/obstacle.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
+#include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Odometry.h>
+#include<tf/transform_datatypes.h> // for tf::getYaw
+#include<tf/transform_listener.h> 
+#include <cmath>
+
 
 #define HALF_PI 1.6079633
 #define CW -1.0
@@ -26,7 +32,26 @@ void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros:
 void ESM(double segLength, double segDistDone, ros::Publisher pub);
 void runInPlaceTurn(double segLength, double direction, ros::Publisher pub);
 void ESMTurnInPlace(double segLength, double segDistDone,double direction, ros::Publisher pub);
+
+nav_msgs::Odometry last_odom;
+geometry_msgs::PoseStamped last_map_pose;
+tf::TransformListener *tfl;
+
+geometry_msgs::PoseStamped temp;
+
 using namespace std;
+
+void odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
+        last_odom = *odom;
+        temp.pose = last_odom.pose.pose;
+        temp.header = last_odom.header;
+        try {
+          tfl->transformPose("map", temp, last_map_pose); // given most recent odometry and most recent coord-frame transform, compute
+                                                          // estimate of most recent pose in map coordinates..."last_map_pose"
+        } catch (tf::TransformException ex) {
+          ROS_ERROR("%s", ex.what());
+        }
+}
 
 void poseCallback(const cwru_base::Pose::ConstPtr& pose) {
 //	cout << pose->x << " | " << pose->y << endl;
@@ -78,6 +103,9 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	double dist_accel;
 	double dist_deccel;
 	double dist_const_v;
+	
+	double braking_distance; // Dynamically defined
+	double path_distance_left; // distance between final point and robot
 	double v_scheduled, v_test,temp, accel_max, velocity_max;
 
 	if(segType==1){
@@ -115,35 +143,28 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 
 	time=time+dt;
 	segDistDone += ((v_past+v_cmd)/2)*dt;
-	/*/ Accel Phase */	
-	if (segDistDone<dist_accel)
-	{
-		v_scheduled = sqrt(2*segDistDone*accel_max);
-		if (v_scheduled < accel_max*dt){
-			v_scheduled = accel_max*dt;
+	// Ramp up or take max velocity	
+	if (path_distance_left > braking_distance) {
+		v_scheduled = v_scheduled + a_max*dt;
+		if (v_scheduled > velocity_max) {
+			v_scheduled = velocity_max;
 		}
 	}
-	/* Constant V Phase */
-	else if (segDistDone<dist_accel+dist_const_v){
-		v_scheduled = velocity_max;
-	}
-	/* Decel Phase */
-	else
-	{
-//		ROS_INFO("DECEL PHASE HANDLING");
-//		ROS_INFO("DECEL (SEGLENGTH - DISTDONE) = %f", (segLength - segDistDone));
+	// Brake
+	else {
 		temp = 2*(segLength-segDistDone)*accel_max;
-//		ROS_INFO("DECEL TEMP: %f", temp);
+
 		if(temp<0){
 			v_scheduled = 0.0;
 		}
 		else{
 			v_scheduled = sqrt(temp);
 		}
-
-//		ROS_INFO("V_SCHEDULED = %f", v_scheduled);
 	}
 
+	
+
+/*
 	if (v_cmd < v_scheduled){
 //		ROS_INFO("V_CMD < V_SCHEDULED");
 		v_test=v_cmd+accel_max*dt;
@@ -163,6 +184,7 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 		v_cmd = velocity_max;
 	}
 
+*/
 //	ROS_INFO("V-CMD == %f", v_cmd);
 
 	if(segType==1){	
