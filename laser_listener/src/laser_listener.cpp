@@ -5,6 +5,8 @@
 #include <laser_listener/obstacle.h>
 #include <iostream>
 
+
+#define CUTOFF 5 //disregard this many degrees of laser scan from the edges
 #define HZ 100
 #define PI 3.141562653589
 #define D2R 0.0174532925 //pi/180
@@ -30,7 +32,7 @@ bool inDeBox(int theta, float r)
     {
         if(abs(r*cos(theta*D2R))<(referenceMsg.boxWidth))
         {
-            cout << "front: " << r*sin(theta*D2R) << "side: " << r*cos(theta*D2R) << endl;            
+            cout << "front: " << r*sin(theta*D2R) << "  side: " << r*cos(theta*D2R) << endl;            
             result = true;
         }
     }
@@ -38,8 +40,10 @@ bool inDeBox(int theta, float r)
     return result;
 }
 
-bool diff(float a, float b){
-	if(a<b-0.5 || a>b+0.05){
+bool diff(float a, float b)
+{
+	if(a<b-0.5 || a>b+0.05) //check: is a LT b minus 1/2 or GT b plus 1/20?
+    {
 		return false;
 	}
 	return true;
@@ -51,7 +55,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
     nearestTheta = 0;
     float shortestRange = 999.999;
 
-    for(uint i = 1; i < 179; i++)
+    for(uint i = CUTOFF; i < 180-CUTOFF; i++)
     {
       if (laserScan->ranges[i]<shortestRange)
       {
@@ -62,7 +66,9 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
       //cout << inDeBox(i, laserScan->ranges[i]);
       //cout<<(laserScan->ranges[i]<0.75); //primitive visualization of lazerz
 
-      if (inDeBox(i, laserScan->ranges[i]) && diff(laserScan->ranges[i],laserScan->ranges[i-1]) && diff(laserScan->ranges[i],laserScan->ranges[i+1]))
+      if (inDeBox(i, laserScan->ranges[i]) 
+          && diff(laserScan->ranges[i],laserScan->ranges[i-1]) 
+          && diff(laserScan->ranges[i],laserScan->ranges[i+1]))
       {
           objectInRange = true;
       }
@@ -78,7 +84,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
     //for large boxes and obstacles just barely in the box, but whose theta
     //is large or small (0-10,170-180), stopping distance may be quite short.  
     holla = true;
-    cout<<endl;
+    //cout<<endl;
 }
 
 int main(int argc, char **argv)
