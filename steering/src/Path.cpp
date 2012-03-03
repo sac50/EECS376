@@ -66,8 +66,10 @@ double Vector::Y(){
 	return y;
 }
 
-Vector Vector::operator*(Vector param){
+Vector Vector::operator-(Vector param){
 	Vector temp;
+	temp.setX(x-param.X());
+	temp.setY(y-param.Y());
 	return temp;
 }
 
@@ -85,7 +87,7 @@ void Path::init(Vector s, Vector e, int t){
 		}
 		else{
 			//Q2
-			seg_psi = pi - atan2((e.Y()-s.Y()),(e.X()-s.X()));
+			seg_psi = atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
@@ -93,13 +95,13 @@ void Path::init(Vector s, Vector e, int t){
 	else{
 		if(e.X()-s.X()<0){
 			//Q3
-			seg_psi = pi + atan2((e.Y()-s.Y()),(e.X()-s.X()));
+			seg_psi = atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
 		else{
 			//Q4
-			seg_psi = (2*pi) - atan2((e.Y()-s.Y()),(e.X()-s.X()));
+			seg_psi = atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
@@ -141,13 +143,12 @@ Vector Path::n_hatCalc(){
 	return t;
 }
 
-Vector Path::d_off(Vector robo_coord){
-	Vector t;
+double Path::d_off(Vector robo_coord){
+	double t;
 	Vector co;
 	co.setX(robo_coord.X()-start.X());
 	co.setY(robo_coord.Y()-start.Y()); 
-	t.setX(co.X()*n_hat.X() + co.X()*n_hat.Y());
-	t.setY(co.Y()*n_hat.X() + co.Y() *n_hat.Y());
+	t = co.X()*n_hat.X() + co.Y()*n_hat.Y();
 	return t;
 }
 

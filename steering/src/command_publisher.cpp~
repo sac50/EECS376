@@ -23,7 +23,8 @@
 #define alpha_max 0.5
 
 const double pi = 3.141592;
-double Kd=0,Ktheta=0;
+double d_threshold = 1.0;
+double Kd=0,K_omega=5.0,omega_sat=2.0;
 double a_max = 0.25;
 bool estop;
 bool stopped;
@@ -109,7 +110,7 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	double dist_accel;
 	double dist_deccel;
 	double dist_const_v;
-	
+	double omega_cmd;
 	double braking_distance=(v_cmd/a_max)*(v_cmd/2); // Dynamically defined
 	double path_distance_left=sqrt(abs(pow(path.getEnd().X()-last_map_pose.pose.position.x,2)+pow(path.getEnd().Y()-last_map_pose.pose.position.y,2))); // distance between final point and robot
 	ROS_INFO("%f %f %f %f",path.getEnd().X(),last_map_pose.pose.position.x,path.getEnd().Y(),last_map_pose.pose.position.y);
@@ -148,6 +149,51 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 		dist_accel = segLength/2;
 		dist_deccel = dist_accel;
 	}
+	
+	
+	double psi_des,psi_err,psi_robot=tf::getYaw(last_map_pose.pose.orientation);
+	Vector xy(last_map_pose.pose.position.x,last_map_pose.pose.position.y);
+	double d = path.d_off(xy);
+	if (d> d_threshold) //%if far to the left of the path, heading should point toward the path
+		psi_des = path.seg_psi-pi/2; //%this heading is perpendicular to the path, pointing towards the path
+	else if (d< -d_threshold) //%same thing if offset too far to the right--point towards path
+		psi_des = path.seg_psi+pi/2;
+	else //%if offset is not large, make the heading gradually parallel to the path;
+		psi_des = path.seg_psi-(pi/2)*d/d_threshold;  //% heading offset proportional to displacement offset
+    
+	psi_err = psi_robot-psi_des; //%compare the current robot heading to the scheduled heading
+	if (psi_err > pi)  //%express heading error in range -pi to pi
+		psi_err = psi_err-2*pi;
+	if (psi_err < -pi)
+		psi_err = psi_err+2*pi;
+    
+    //%feedback to coerce robot heading to conform to scheduled heading
+	omega_cmd = -K_omega*psi_err;  //%linear control law-> omega_cmd
+    //%limit the spin command to the legal range
+	if (omega_cmd > omega_sat)
+		omega_cmd = omega_sat;
+	else if (omega_cmd < -omega_sat)
+		omega_cmd = -omega_sat;
+    
+    //%differential robot kinematics:
+	double psidot = omega_cmd;
+	double xdot = cos(psi_robot);
+	double ydot = sin(psi_robot);
+    
+    //%Euler one-step integration:
+	psi_robot = psi_robot+psidot*dt;
+    //%force heading into range -pi to pi
+	if (psi_robot >pi)
+		psi_robot = psi_robot-2*pi;
+	if (psi_robot< -pi)
+		psi_robot = psi_robot+2*pi;
+    //%Euler one-step for x and y updates:
+    //xy_robot_coords = xy_robot_coords + [xdot;ydot]*dt;
+	
+	
+	
+	
+	
 
 	time=time+dt;
 	segDistDone += ((v_past+v_cmd)/2)*dt;
@@ -181,7 +227,7 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 			v_test = v_cmd-1.2*accel_max*dt;
 			v_cmd = max(v_test,v_scheduled);
 		}
-		v_cmd = max(0,v_cmd-accel_max*dt);
+		//v_cmd = max(0,v_cmd-accel_max*dt);
 	}
 
 /*
@@ -209,12 +255,12 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 
 	if(segType==1){	
 		velocity_cmd.linear.x = v_cmd;
-		velocity_cmd.angular.z = 0.0;
+		velocity_cmd.angular.z = omega_cmd;
 		return velocity_cmd;
 	}
 	else if(segType==2){
 		velocity_cmd.linear.x = 0.0;
-		velocity_cmd.angular.z = v_cmd;
+		velocity_cmd.angular.z = omega_cmd;
 		return velocity_cmd;
 	}
 	else if (segType == 4) {

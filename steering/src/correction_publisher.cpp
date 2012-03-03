@@ -71,7 +71,7 @@ for t = 0:dt:t_final
     end
     
     //%feedback to coerce robot heading to conform to scheduled heading
-    omega_cmd = -K_omega*psi_err;  %linear control law-> omega_cmd
+    omega_cmd = -K_omega*psi_err;  //%linear control law-> omega_cmd
     //%limit the spin command to the legal range
     if omega_cmd > omega_sat
         omega_cmd = omega_sat
@@ -80,13 +80,13 @@ for t = 0:dt:t_final
     end
     
     //%store incremental results for post plotting
-    t_history=[t_history,t];
-    d_history = [d_history,d];
-    x_history = [x_history,xy_robot_coords(1)];
-    y_history = [y_history,xy_robot_coords(2)];
-    psi_history = [psi_history,psi_robot];
-    u_history = [u_history,omega_cmd];
-    psi_des_history=[psi_des_history,psi_des];
+    //t_history=[t_history,t];
+    //d_history = [d_history,d];
+    //x_history = [x_history,xy_robot_coords(1)];
+    //y_history = [y_history,xy_robot_coords(2)];
+    //psi_history = [psi_history,psi_robot];
+    //u_history = [u_history,omega_cmd];
+    //psi_des_history=[psi_des_history,psi_des];
   
     //%differential robot kinematics:
     psidot = omega_cmd;

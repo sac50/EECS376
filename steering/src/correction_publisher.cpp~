@@ -35,13 +35,13 @@ double psi0 = 0;
 double v = 1; //%1m/sec;  note that should change gains if change speed
 
 //%create some arrays to store simulation results
-d_history = []; 
-psi_history = [];
-psi_des_history = [];
-t_history = [];
-u_history= []; //%save history of omega commands as well
-x_history = [];
-y_history = [];
+//d_history = []; 
+//psi_history = [];
+//psi_des_history = [];
+//t_history = [];
+//u_history= []; //%save history of omega commands as well
+//x_history = [];
+//y_history = [];
 xy_robot_coords = [x0;y0]; //% initialize variables
 psi_robot = psi0;
 x_dot = [0;0]; //%compute these terms to integrate differential equations

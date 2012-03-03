@@ -13,7 +13,7 @@ class Vector{
 		void setY(double);
 		double X();
 		double Y();
-		Vector operator*(Vector);
+		Vector operator-(Vector);
 };
 
 class Path{
@@ -34,7 +34,7 @@ class Path{
 		double getPsiS();
 		double getPsiF();
 		Vector n_hatCalc();
-		Vector d_off(Vector);		
+		double d_off(Vector);		
 };
 
 #endif

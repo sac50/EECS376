@@ -13,7 +13,7 @@ class Vector{
 		void setY(double);
 		double X();
 		double Y();
-		Vector operator*(Vector);
+		Vector operator-(Vector);
 };
 
 class Path{
@@ -26,15 +26,15 @@ class Path{
 		Vector t_hat;
 		Vector n_hat;
 		Path(){};
-		void Path::init(Vector, Vector, int);
-		void Path::init(double,double,int);
-		int Path::getType();
-		Vector Path::getStart();
-		Vector Path::getEnd();
-		double Path::getPsiS();
-		double Path::getPsiF();
-		Vector Path::n_hatCalc();
-		Vector Path::d_off(Vector);		
+		void init(Vector, Vector, int);
+		void init(double,double,int);
+		int getType();
+		Vector getStart();
+		Vector getEnd();
+		double getPsiS();
+		double getPsiF();
+		Vector n_hatCalc();
+		Vector d_off(Vector);		
 };
 
 #endif
