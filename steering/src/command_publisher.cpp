@@ -10,6 +10,7 @@
 #include<tf/transform_listener.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
 #include "Path.h"
+#include <cmath>
 
 #define HALF_PI 1.6079633
 #define CW -1.0
@@ -103,6 +104,9 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	double dist_accel;
 	double dist_deccel;
 	double dist_const_v;
+	
+	double braking_distance; // Dynamically defined
+	double path_distance_left; // distance between final point and robot
 	double v_scheduled, v_test,temp, accel_max, velocity_max;
 
 	if(segType==1){
@@ -140,35 +144,28 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 
 	time=time+dt;
 	segDistDone += ((v_past+v_cmd)/2)*dt;
-	/*/ Accel Phase */	
-	if (segDistDone<dist_accel)
-	{
-		v_scheduled = sqrt(2*segDistDone*accel_max);
-		if (v_scheduled < accel_max*dt){
-			v_scheduled = accel_max*dt;
+	// Ramp up or take max velocity	
+	if (path_distance_left > braking_distance) {
+		v_scheduled = v_scheduled + a_max*dt;
+		if (v_scheduled > velocity_max) {
+			v_scheduled = velocity_max;
 		}
 	}
-	/* Constant V Phase */
-	else if (segDistDone<dist_accel+dist_const_v){
-		v_scheduled = velocity_max;
-	}
-	/* Decel Phase */
-	else
-	{
-//		ROS_INFO("DECEL PHASE HANDLING");
-//		ROS_INFO("DECEL (SEGLENGTH - DISTDONE) = %f", (segLength - segDistDone));
+	// Brake
+	else {
 		temp = 2*(segLength-segDistDone)*accel_max;
-//		ROS_INFO("DECEL TEMP: %f", temp);
+
 		if(temp<0){
 			v_scheduled = 0.0;
 		}
 		else{
 			v_scheduled = sqrt(temp);
 		}
-
-//		ROS_INFO("V_SCHEDULED = %f", v_scheduled);
 	}
 
+	
+
+/*
 	if (v_cmd < v_scheduled){
 //		ROS_INFO("V_CMD < V_SCHEDULED");
 		v_test=v_cmd+accel_max*dt;
@@ -188,6 +185,7 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 		v_cmd = velocity_max;
 	}
 
+*/
 //	ROS_INFO("V-CMD == %f", v_cmd);
 
 	if(segType==1){	
