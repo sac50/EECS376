@@ -11,6 +11,8 @@
 #include<geometry_msgs/Twist.h> //data type for velocities
 #include "Path.h"
 #include <cmath>
+#include <stdio.h>
+#include <iostream>
 
 #define HALF_PI 1.6079633
 #define CW -1.0
@@ -38,11 +40,13 @@ using namespace std;
 
 nav_msgs::Odometry last_odom;
 geometry_msgs::PoseStamped last_map_pose;
+//geometry_msgs::PoseStamped old_map_pose;
 tf::TransformListener *tfl;
 Path segment;
 
 geometry_msgs::PoseStamped temp;
 void odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
+	//old_map_pose=last_map_pose;
         last_odom = *odom;
         temp.pose = last_odom.pose.pose;
         temp.header = last_odom.header;
@@ -98,15 +102,17 @@ double max(double a, double b){
 
 
 /* Obstacle detection = segType 4 */
-geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, double segDistDone, double segLength, double segType){
+geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, double segDistDone, double segLength, double segType,Path path){
 	geometry_msgs::Twist velocity_cmd;
 	double T_accel, T_decel;
 	double dist_accel;
 	double dist_deccel;
 	double dist_const_v;
 	
-	double braking_distance; // Dynamically defined
-	double path_distance_left; // distance between final point and robot
+	double braking_distance=(v_cmd/a_max)*(v_cmd/2); // Dynamically defined
+	double path_distance_left=sqrt(abs(pow(path.getEnd().X()-last_map_pose.pose.position.x,2)+pow(path.getEnd().Y()-last_map_pose.pose.position.y,2))); // distance between final point and robot
+	ROS_INFO("%f %f %f %f",path.getEnd().X(),last_map_pose.pose.position.x,path.getEnd().Y(),last_map_pose.pose.position.y);
+	ROS_INFO("%f %f",braking_distance,path_distance_left);
 	double v_scheduled, v_test,temp, accel_max, velocity_max;
 
 	if(segType==1){
@@ -114,17 +120,17 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 		velocity_max = v_max;
 		T_accel = v_max/a_max;
 		//T_decel = v_max/a_max;
-		dist_accel= 0.5*accel_max*T_accel*T_accel;
-		dist_deccel = 0.5*accel_max*T_accel*T_accel;
-		dist_const_v = segLength - dist_accel -dist_deccel;
+		//dist_accel= 0.5*accel_max*T_accel*T_accel;
+		//dist_deccel = 0.5*accel_max*T_accel*T_accel;
+		//dist_const_v = segLength - dist_accel -dist_deccel;
 	}
 	else if(segType==2){
 		accel_max = alpha_max;
 		velocity_max = omega_max;
 		T_accel = omega_max/alpha_max;
-		dist_accel= 0.5*accel_max*T_accel*T_accel;
-		dist_deccel = 0.5*accel_max*T_accel*T_accel;
-		dist_const_v = segLength - dist_accel -dist_deccel;
+		//dist_accel= 0.5*accel_max*T_accel*T_accel;
+		//dist_deccel = 0.5*accel_max*T_accel*T_accel;
+		//dist_const_v = segLength - dist_accel -dist_deccel;
 	}
 	/* Obstacle detected, Ramp down V to 0 */
 	else if (segType == 4) {
@@ -146,9 +152,9 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	segDistDone += ((v_past+v_cmd)/2)*dt;
 	// Ramp up or take max velocity	
 	if (path_distance_left > braking_distance) {
-		v_scheduled = v_scheduled + a_max*dt;
-		if (v_scheduled > velocity_max) {
-			v_scheduled = velocity_max;
+		v_cmd = v_cmd + a_max*dt;
+		if (v_cmd > velocity_max) {
+			v_cmd = velocity_max;
 		}
 	}
 	// Brake
@@ -156,10 +162,10 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 		temp = 2*(segLength-segDistDone)*accel_max;
 
 		if(temp<0){
-			v_scheduled = 0.0;
+			v_cmd = 0.0;
 		}
 		else{
-			v_scheduled = sqrt(temp);
+			v_cmd = sqrt(temp);
 		}
 	}
 
@@ -237,16 +243,22 @@ void runLinear(double segLength, ros::Publisher pub, Path path){
 	double dist_const_v = segLength - dist_accel -dist_deccel;
 	double v_scheduled, v_test,temp;
 	double goalSegLength = segLength;
+	double dist_to_goal;
+	bool goal=false;
 	segDistLeft = segLength;
 	if(dist_const_v<0){
 		dist_accel = segLength/2;
 		dist_deccel = dist_accel;
 	}
 
-	while (ros::ok() && segDistDone<segLength) // do work here
+	while (ros::ok() && !goal) // do work here
 	{
 		ros::spinOnce();
-
+		dist_to_goal = sqrt((path.getEnd().X()-last_map_pose.pose.position.x)+(path.getEnd().Y()-last_map_pose.pose.position.y));
+		if(dist_to_goal<0.05){
+			goal=true;
+			continue;
+		}
 		if (estop == false) {
 			ESM(segLength, segDistDone, pub,path);
 			return;
@@ -263,7 +275,7 @@ void runLinear(double segLength, ros::Publisher pub, Path path){
 		segDistLeft -= ((v_past+v_cmd)/2)*dt;
 		v_past = v_cmd;
 
-		vel_object = getVelocity(t,v_past,v_cmd,segDistDone,segLength,1);
+		vel_object = getVelocity(t,v_past,v_cmd,segDistDone,segLength,1,path);
 		if(vel_object.linear.y==-1){
 //			ROS_INFO("We had a bad segType");
 			return;
@@ -331,7 +343,7 @@ void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros:
 		segDistDone += ((v_past+v_cmd)/2)*dt;
 		segDistLeft += ((v_past+v_cmd)/2)*dt;
 		v_past = v_cmd;
-		vel_object = getVelocity(t,v_past,v_cmd,segDistDone,segLength,4);
+		vel_object = getVelocity(t,v_past,v_cmd,segDistDone,segLength,4,path);
 		if(vel_object.linear.y==-1){
 //			ROS_INFO("We had a bad segType");
 			return;
@@ -401,7 +413,7 @@ void runInPlaceTurn(double segLength, double direction, ros::Publisher pub, Path
 		segDistDone += ((omega_past+omega_cmd)/2)*dt;
 		omega_past = omega_cmd;
 
-		vel_object = getVelocity(t,omega_past,omega_cmd,segDistDone,segLength,2);
+		vel_object = getVelocity(t,omega_past,omega_cmd,segDistDone,segLength,2,path);
 		if(vel_object.linear.y==-1){
 //			ROS_INFO("We had a bad segType");
 			return;
@@ -434,16 +446,32 @@ int main(int argc,char **argv)
 
 	while (!ros::Time::isValid()) {} // simulation time sometimes initializes slowly. Wait until ros::Time::now() will be valid
 	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
+	while (!tfl->canTransform("map", "odom", ros::Time::now())) {ros::spinOnce();}
 	ROS_INFO("birthday started as %f", birthday.toSec());
 	
 	int tem,ty;
-	sscanf("Path.txt","Kd: %f/nKtheta: %f/nsegments: %d/n",Kd,Ktheta,tem);
+	
+	
+	char *path=NULL;
+	size_t size;
+	path=getcwd(path,size);
+	ROS_INFO(path);
+	//FILE * fil;
+	ROS_INFO("asdfghjk");
+	/*fil = fopen("src/Paths.txt","r");
+	//fclose(fil);
+	//return NULL;
+	if(fscanf(fil,"Kd: %f/nKtheta: %f/nsegments: %d/n",Kd,Ktheta,tem)<3){
+		ROS_INFO("IT HATES YOU");	}
 	Path Segments[tem];
 	Vector t1,t2;
 	double pS,pF;
 	holdingPattern(0.5,pub);
 	for(int i=0;i<tem;i++){
-		sscanf("Path.txt","Path type: %i x0: %f y0: %f x1: %f y1: %f psiS: %f psiF: %f/n",&ty,&t1.x,&t1.y,&t2.x,&t2.y,&pS,&pF);
+		
+		if(fscanf(fil,"Path type: %i x0: %f y0: %f x1: %f y1: %f psiS: %f psiF: %f/n",&ty,&t1.x,&t1.y,&t2.x,&t2.y,&pS,&pF)<7){
+			ROS_INFO("I HATE YOU");
+		}
 		if(ty==1){
 			Segments[i].init(t1,t2,ty);
 			runLinear(Segments[i].length,pub,Segments[i]);
@@ -454,6 +482,15 @@ int main(int argc,char **argv)
 		}
 		holdingPattern(0.2,pub);
 	}
+	fclose(fil);*/
+	Path Segment;
+	Vector t1,t2;
+	t1.x=8.42;
+	t1.y=15.09;
+	t2.x=5.27;
+	t2.y=11.94;
+	Segment.init(t1,t2,1);
+	runLinear(Segment.length,pub,Segment);
 /*
 	holdingPattern(0.5,pub);
 
