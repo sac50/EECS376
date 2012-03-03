@@ -24,7 +24,7 @@
 
 const double pi = 3.141592;
 double d_threshold = 1.0;
-double Kd=0,K_omega=5.0,omega_sat=2.0;
+double Kd=0,K_omega=10.0,omega_sat=2.0;
 double a_max = 0.25;
 bool estop;
 bool stopped;
@@ -149,7 +149,6 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 		dist_accel = segLength/2;
 		dist_deccel = dist_accel;
 	}
-	
 	
 	double psi_des,psi_err,psi_robot=tf::getYaw(last_map_pose.pose.orientation);
 	Vector xy(last_map_pose.pose.position.x,last_map_pose.pose.position.y);
@@ -550,6 +549,7 @@ int main(int argc,char **argv)
 	t2.x=-3.43;
 	t2.y=20.69;
 	Segment.init(t1,t2,1);
+	Vector ignore = Segment.n_hatCalc();
 	runLinear(Segment.length,pub,Segment);
 /*
 	holdingPattern(0.5,pub);
