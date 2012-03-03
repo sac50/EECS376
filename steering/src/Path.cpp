@@ -79,13 +79,13 @@ void Path::init(Vector s, Vector e, int t){
 	if(e.Y()-s.Y() >= 0){
 		if(e.X()-s.X()>=0){
 			//Q1
-			seg_psi = atan((e.Y()-s.Y())/(e.X()-s.X()));
+			seg_psi = atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
 		else{
 			//Q2
-			seg_psi = pi - atan((e.Y()-s.Y())/(e.X()-s.X()));
+			seg_psi = pi - atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
@@ -93,13 +93,13 @@ void Path::init(Vector s, Vector e, int t){
 	else{
 		if(e.X()-s.X()<0){
 			//Q3
-			seg_psi = pi + atan((e.Y()-s.Y())/(e.X()-s.X()));
+			seg_psi = pi + atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
 		else{
 			//Q4
-			seg_psi = (2*pi) - atan((e.Y()-s.Y())/(e.X()-s.X()));
+			seg_psi = (2*pi) - atan2((e.Y()-s.Y()),(e.X()-s.X()));
 			t_hat.setX(cos(seg_psi));
 			t_hat.setY(sin(seg_psi));
 		}
@@ -134,8 +134,9 @@ double Path::getPsiF(){
 
 Vector Path::n_hatCalc(){
 	Vector t;
-	t.setX(-t_hat.X());
-	t.setY(t_hat.Y());
+	double temp = t_hat.X();
+	t.setX(-t_hat.Y());
+	t.setY(temp);
 	n_hat = t;
 	return t;
 }

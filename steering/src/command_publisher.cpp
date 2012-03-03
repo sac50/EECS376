@@ -4,7 +4,12 @@
 #include<math.h>
 #include <cwru_base/Pose.h>
 #include <steering/obstacle.h>
+#include<geometry_msgs/PoseStamped.h> //data type for Pose combined with frame and timestamp
+#include<nav_msgs/Odometry.h> //data type for odometry information (see available fields with 'rosmsg show nav_msgs/Odometry')
+#include<tf/transform_datatypes.h> // for tf::getYaw
+#include<tf/transform_listener.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
+#include "Path.h"
 
 #define HALF_PI 1.6079633
 #define CW -1.0
@@ -14,6 +19,8 @@
 #define omega_max 1.0
 #define alpha_max 0.5
 
+const double pi = 3.141592;
+double Kd=0,Ktheta=0;
 double a_max = 0.25;
 bool estop;
 bool stopped;
@@ -22,11 +29,29 @@ bool obstacle;
 double nearestObstacle = 0.0;
 double segDistLeft;
 /* Obstacle Avoidance Mode, E-Stop Mode */
-void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros::Publisher pub);
-void ESM(double segLength, double segDistDone, ros::Publisher pub);
-void runInPlaceTurn(double segLength, double direction, ros::Publisher pub);
-void ESMTurnInPlace(double segLength, double segDistDone,double direction, ros::Publisher pub);
+void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros::Publisher pub,Path path);
+void ESM(double segLength, double segDistDone, ros::Publisher pub,Path path);
+void runInPlaceTurn(double segLength, double direction, ros::Publisher pub,Path path);
+void ESMTurnInPlace(double segLength, double segDistDone,double direction, ros::Publisher pub,Path path);
 using namespace std;
+
+nav_msgs::Odometry last_odom;
+geometry_msgs::PoseStamped last_map_pose;
+tf::TransformListener *tfl;
+Path segment;
+
+geometry_msgs::PoseStamped temp;
+void odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
+        last_odom = *odom;
+        temp.pose = last_odom.pose.pose;
+        temp.header = last_odom.header;
+        try {
+          tfl->transformPose("map", temp, last_map_pose); // given most recent odometry and most recent coord-frame transform, compute
+                                                          // estimate of most recent pose in map coordinates..."last_map_pose"
+        } catch (tf::TransformException ex) {
+          ROS_ERROR("%s", ex.what());
+        }
+}
 
 void poseCallback(const cwru_base::Pose::ConstPtr& pose) {
 //	cout << pose->x << " | " << pose->y << endl;
@@ -200,7 +225,7 @@ void holdingPattern(double time, ros::Publisher pub){
 	return;
 }
 
-void runLinear(double segLength, ros::Publisher pub){
+void runLinear(double segLength, ros::Publisher pub, Path path){
 	estop = true;	
 	geometry_msgs::Twist vel_object;
 	ros::Rate naptime(nap);
@@ -225,13 +250,13 @@ void runLinear(double segLength, ros::Publisher pub){
 		ros::spinOnce();
 
 		if (estop == false) {
-			ESM(segLength, segDistDone, pub);
+			ESM(segLength, segDistDone, pub,path);
 			return;
 		}
 
 		if (obstacle) {
 			// Grab current segDistDone and segLength
-			OAM(segLength, segDistDone, v_cmd, v_past, pub);
+			OAM(segLength, segDistDone, v_cmd, v_past, pub,path);
 			return;
 		}
 
@@ -258,7 +283,7 @@ void runLinear(double segLength, ros::Publisher pub){
 	return;
 }
 
-void ESM(double segLength, double segDistDone, ros::Publisher pub) {
+void ESM(double segLength, double segDistDone, ros::Publisher pub,Path path) {
 	geometry_msgs::Twist vel_object;
 	ros::Rate naptime(nap);
 	vel_object.linear.x = 0.0;
@@ -275,10 +300,10 @@ void ESM(double segLength, double segDistDone, ros::Publisher pub) {
 
 	holdingPattern(1, pub);
 	segLength = segLength - segDistDone;
-	runLinear(segLength, pub);
+	runLinear(segLength, pub,path);
 }	
 
-void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros::Publisher pub) {
+void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros::Publisher pub,Path path) {
 	geometry_msgs::Twist vel_object;
 	ros::Rate naptime(nap);
 	a_max = v_cmd * v_cmd / (2*nearestObstacle*.70);
@@ -300,7 +325,7 @@ void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros:
 		ros::spinOnce();
 		if (!estop) {
 			// completed so far
-			ESM(goalSegLength-localDistDone, segDistDone, pub);
+			ESM(goalSegLength-localDistDone, segDistDone, pub,path);
 			return;
 		}
 		t = t+dt;
@@ -322,13 +347,13 @@ void OAM(double segLength, double segDistDone, double v_cmd, double v_past, ros:
 	a_max = 0.25;
 	double restOfSeg = goalSegLength - segDistDone;
 //	ROS_INFO("EXITING OAM.  REST OF SEG = %f", restOfSeg);
-	runLinear(restOfSeg, pub);
+	runLinear(restOfSeg, pub,path);
 
 	return;
 	
 }
 
-void ESMTurnInPlace(double segLength, double segDistDone,double direction, ros::Publisher pub) {
+void ESMTurnInPlace(double segLength, double segDistDone,double direction, ros::Publisher pub,Path path) {
 	geometry_msgs::Twist vel_object;
 	ros::Rate naptime(nap);
 	vel_object.linear.x = 0.0;
@@ -345,9 +370,9 @@ void ESMTurnInPlace(double segLength, double segDistDone,double direction, ros::
 	
 	holdingPattern(1, pub);
 	segLength = segLength - segDistDone;
-	runInPlaceTurn(segLength, direction, pub);	
+	runInPlaceTurn(segLength, direction, pub,path);	
 }
-void runInPlaceTurn(double segLength, double direction, ros::Publisher pub){
+void runInPlaceTurn(double segLength, double direction, ros::Publisher pub, Path path){
 
 	geometry_msgs::Twist vel_object;
 	ros::Rate naptime(nap);
@@ -370,7 +395,7 @@ void runInPlaceTurn(double segLength, double direction, ros::Publisher pub){
 		ros::spinOnce();
 
 		if (estop == false) {
-			ESMTurnInPlace(segLength, segDistDone, direction, pub);
+			ESMTurnInPlace(segLength, segDistDone, direction, pub,path);
 			return;
 		}
 		
@@ -399,10 +424,12 @@ int main(int argc,char **argv)
 {
 	ros::init(argc,argv,"command_publisher");//name of this node
 	ros::NodeHandle n;
+	tfl = new tf::TransformListener();
 	ros::Publisher pub = n.advertise<geometry_msgs::Twist>("cmd_vel",1);
 	ros::Subscriber sub = n.subscribe("motors_enabled",1,estopCallback);
 	ros::Subscriber sub1 = n.subscribe("flipped_pose",1,poseCallback);
 	ros::Subscriber sub2 = n.subscribe("obstructions", 1,obstructionsCallback);
+	ros::Subscriber sub3 = n.subscribe<nav_msgs::Odometry>("odom", 1, odomCallback);
 
 	//"cmd_vel" is the topic name to publish velocity commands
 	//"1" is the buffer size (could use buffer>1 in case network bogs down)
@@ -410,12 +437,31 @@ int main(int argc,char **argv)
 	while (!ros::Time::isValid()) {} // simulation time sometimes initializes slowly. Wait until ros::Time::now() will be valid
 	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
 	ROS_INFO("birthday started as %f", birthday.toSec());
-
+	
+	int tem,ty;
+	sscanf("Path.txt","Kd: %f/nKtheta: %f/nsegments: %d/n",Kd,Ktheta,tem);
+	Path Segments[tem];
+	Vector t1,t2;
+	double pS,pF;
+	holdingPattern(0.5,pub);
+	for(int i=0;i<tem;i++){
+		sscanf("Path.txt","Path type: %i x0: %f y0: %f x1: %f y1: %f psiS: %f psiF: %f/n",&ty,&t1.x,&t1.y,&t2.x,&t2.y,&pS,&pF);
+		if(ty==1){
+			Segments[i].init(t1,t2,ty);
+			runLinear(Segments[i].length,pub,Segments[i]);
+		}
+		else if(ty==2){
+			Segments[i].init(pS,pF,ty);
+			runInPlaceTurn(HALF_PI,CW,pub,Segments[i]);
+		}
+		holdingPattern(0.2,pub);
+	}
+/*
 	holdingPattern(0.5,pub);
 
 	runLinear(4,pub);
 	holdingPattern(0.2,pub);
-/*	
+	
 	runInPlaceTurn(2.0*HALF_PI, CW, pub);
 	holdingPattern(0.2, pub);
 
@@ -424,7 +470,7 @@ int main(int argc,char **argv)
 	
 	runInPlaceTurn(2.0*HALF_PI, CW, pub);
 	holdingPattern(0.2, pub);
-*/
+
 	runInPlaceTurn(HALF_PI,CW,pub);
 	holdingPattern(0.2,pub);
 
@@ -436,7 +482,7 @@ int main(int argc,char **argv)
 
 	runLinear(4,pub);
 	holdingPattern(0.05,pub); 
-/*
+
 	runInPlaceTurn(HALF_PI,CW,pub);
 	holdingPattern(0.2,pub);
 	
