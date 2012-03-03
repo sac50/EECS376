@@ -1,80 +1,4 @@
-#include<ros/ros.h>
-#include<cwru_base/cRIOSensors.h>
-#include<std_msgs/Bool.h>
-#include<math.h>
-#include <cwru_base/Pose.h>
-#include<geometry_msgs/Twist.h>
-#include<geometry_msgs/PoseStamped.h> //data type for Pose combined with frame and timestamp
-#include<nav_msgs/Odometry.h> //data type for odometry information (see available fields with 'rosmsg show nav_msgs/Odometry')
-#include<tf/transform_datatypes.h> // for tf::getYaw
-#include<tf/transform_listener.h>
-#include "Path.h"
 
-const double pi = 3.141592;
-
-nav_msgs::Odometry last_odom;
-geometry_msgs::PoseStamped last_map_pose;
-tf::TransformListener *tfl;
-Path segment;
-
-geometry_msgs::PoseStamped temp;
-void odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
-        last_odom = *odom;
-        temp.pose = last_odom.pose.pose;
-        temp.header = last_odom.header;
-        try {
-          tfl->transformPose("map", temp, last_map_pose); // given most recent odometry and most recent coord-frame transform, compute
-                                                          // estimate of most recent pose in map coordinates..."last_map_pose"
-        } catch (tf::TransformException ex) {
-          ROS_ERROR("%s", ex.what());
-        }
-}
-
-Path decomposeMsg(steering::Path pubP){
-	if(pubP.type == 1){	
-		Vector s(pubP.x0,pubP.y0);
-		Vector e(pubP.x1,pubP.y1);
-		Path p;
-		p.init(s,e,pubP.type);
-		return p;
-	}
-	else if(pubP.type == 2){
-		Path p;
-		p.init(pubP.psiS,pubP.psiF,pubP.type);
-		return p;
-	}
-
-	return NULL;
-}
-
-void pathCallback(const steering::Path::ConstPtr& pubP){
-	segment = decomposeMsg(pubP);
-}
-
-int main(int argc,char **argv)
-{
-	ros::init(argc,argv,"correction_publisher");//name of this node
-	ros::NodeHandle n;
-        tfl = new tf::TransformListener();
-	ros::Publisher pub = n.advertise<geometry_msgs::Twist>("cmd_vel",1);
-        ros::Subscriber sub = n.subscribe<nav_msgs::Odometry>("odom", 1, odomCallback);
-        //ros::Subscriber pSub = n.subscribe<steering::Path>("SegPath",1,pathCallback);
-	//"cmd_vel" is the topic name to publish velocity commands
-	//"1" is the buffer size (could use buffer>1 in case network bogs down)
-
-	geometry_msgs::Twist vel_object;
-	geometry_msgs::Twist cmd_vel;
-        geometry_msgs::PoseStamped desired_pose;  // not used in this program...ideally, get by subscription
-	while (!ros::Time::isValid()) {ros::spinOnce();} // simulation time sometimes initializes slowly. Wait until ros::Time::now() will be valid, but let any callbacks happen
-        while (!tfl->canTransform("map", "odom", ros::Time::now())) {ros::spinOnce();} // wait until there is transform data available before starting our controller loop
-	//ros::Duration run_duration(3.0); // specify desired duration of this command segment to be 3 seconds
-	ros::Duration elapsed_time; // define a variable to hold elapsed time
-	ros::Rate naptime(10); //will perform sleeps to enforce loop rate of "10" Hz
-	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
-	ROS_INFO("birthday started as %f", birthday.toSec());
-
-
-}
 //%apply nonlinear steering algorithm to nonlinear robot kinematics
 
 //%steering simulation, 2nd order
@@ -111,13 +35,13 @@ double psi0 = 0;
 double v = 1; //%1m/sec;  note that should change gains if change speed
 
 //%create some arrays to store simulation results
-d_history = []; 
-psi_history = [];
-psi_des_history = [];
-t_history = [];
-u_history= []; //%save history of omega commands as well
-x_history = [];
-y_history = [];
+//d_history = []; 
+//psi_history = [];
+//psi_des_history = [];
+//t_history = [];
+//u_history= []; //%save history of omega commands as well
+//x_history = [];
+//y_history = [];
 xy_robot_coords = [x0;y0]; //% initialize variables
 psi_robot = psi0;
 x_dot = [0;0]; //%compute these terms to integrate differential equations

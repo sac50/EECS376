@@ -16,7 +16,7 @@
 
 #define HALF_PI 1.6079633
 #define CW -1.0
-#define nap 50
+#define nap 10
 #define CCW 1.0
 #define v_max 0.75
 #define omega_max 1.0
@@ -27,7 +27,8 @@ double Kd=0,Ktheta=0;
 double a_max = 0.25;
 bool estop;
 bool stopped;
-double dt = 0.02;
+bool braking=false;
+double dt = 0.1;
 bool obstacle;
 double nearestObstacle = 0.0;
 double segDistLeft;
@@ -151,7 +152,7 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	time=time+dt;
 	segDistDone += ((v_past+v_cmd)/2)*dt;
 	// Ramp up or take max velocity	
-	if (path_distance_left > braking_distance) {
+	if (path_distance_left > braking_distance && !braking) {
 		v_cmd = v_cmd + a_max*dt;
 		if (v_cmd > velocity_max) {
 			v_cmd = velocity_max;
@@ -159,17 +160,22 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	}
 	// Brake
 	else {
-		temp = 2*(segLength-segDistDone)*accel_max;
+		braking=true;
+		temp = 2*(path_distance_left)*accel_max;
 
 		if(temp<0){
-			v_cmd = 0.0;
+			v_scheduled = 0.0;
 		}
 		else{
-			v_cmd = sqrt(temp);
+			v_scheduled = sqrt(temp);
 		}
+		if (v_cmd > v_scheduled){
+	//		ROS_INFO("V_CMD > V_SCHEDULED");
+			v_test = v_cmd-1.2*accel_max*dt;
+			v_cmd = max(v_test,v_scheduled);
+		}
+		v_cmd = max(0,v_cmd-accel_max*dt);
 	}
-
-	
 
 /*
 	if (v_cmd < v_scheduled){
@@ -190,8 +196,8 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 //		ROS_INFO ("V_CMD > VELOCITY MAX");
 		v_cmd = velocity_max;
 	}
-
 */
+
 //	ROS_INFO("V-CMD == %f", v_cmd);
 
 	if(segType==1){	
@@ -254,7 +260,7 @@ void runLinear(double segLength, ros::Publisher pub, Path path){
 	while (ros::ok() && !goal) // do work here
 	{
 		ros::spinOnce();
-		dist_to_goal = sqrt((path.getEnd().X()-last_map_pose.pose.position.x)+(path.getEnd().Y()-last_map_pose.pose.position.y));
+		dist_to_goal = sqrt(abs(pow(path.getEnd().X()-last_map_pose.pose.position.x,2)+pow(path.getEnd().Y()-last_map_pose.pose.position.y,2)));
 		if(dist_to_goal<0.05){
 			goal=true;
 			continue;
@@ -290,6 +296,7 @@ void runLinear(double segLength, ros::Publisher pub, Path path){
 		//thus enforcing that we achieve the desired update rate (20Hz)
 		
 	}
+	braking=false;
 	return;
 }
 
@@ -485,10 +492,10 @@ int main(int argc,char **argv)
 	fclose(fil);*/
 	Path Segment;
 	Vector t1,t2;
-	t1.x=8.42;
-	t1.y=15.09;
-	t2.x=5.27;
-	t2.y=11.94;
+	t1.x=5.27;
+	t1.y=11.94;
+	t2.x=-3.43;
+	t2.y=20.69;
 	Segment.init(t1,t2,1);
 	runLinear(Segment.length,pub,Segment);
 /*

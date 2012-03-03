@@ -39,7 +39,7 @@ bool inDeBox(int theta, float r)
 }
 
 bool diff(float a, float b){
-	if(a<b-0.5 || a>b+0.05){
+	if(a<b-0.05 || a>b+0.05){
 		return false;
 	}
 	return true;
@@ -91,9 +91,9 @@ int main(int argc, char **argv)
     
     ros::Subscriber sub = n.subscribe("base_scan",1,laserCallback);
 
-    ros::Publisher pub = n.advertise<laser_listener::obstacle>("obstructions", 10);
+    ros::Publisher pub = n.advertise<steering::obstacle>("obstructions", 10);
     
-    laser_listener::obstacle obstacleMsg;
+    steering::obstacle obstacleMsg;
 
     //ros::spin();
     while(!ros::Time::isValid())

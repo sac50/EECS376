@@ -39,7 +39,7 @@ bool inDeBox(int theta, float r)
 }
 
 bool diff(float a, float b){
-	if(a<b-0.5 || a>b+0.05){
+	if(a<b-0.05 || a>b+0.05){
 		return false;
 	}
 	return true;
