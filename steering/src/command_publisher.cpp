@@ -150,7 +150,11 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 
 	time=time+dt;
 	segDistDone += ((v_past+v_cmd)/2)*dt;
-	// Ramp up or take max velocity	
+	// Ramp up or take max velocity		
+	
+	ROS_INFO("--------------------------------------------------------------");
+	ROS_INFO("Path_distance: %f | Braking Distance %f", path_distance_left, braking_distance);
+	ROS_INFO("--------------------------------------------------------------");
 	if (path_distance_left > braking_distance) {
 		v_cmd = v_cmd + a_max*dt;
 		if (v_cmd > velocity_max) {
@@ -159,7 +163,9 @@ geometry_msgs::Twist getVelocity(double time, double v_past, double v_cmd, doubl
 	}
 	// Brake
 	else {
-		temp = 2*(segLength-segDistDone)*accel_max;
+		ROS_INFO("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+		ROS_INFO("STARTED BRAKING");
+		temp = 2*(path_distance_left)*accel_max;
 
 		if(temp<0){
 			v_cmd = 0.0;
