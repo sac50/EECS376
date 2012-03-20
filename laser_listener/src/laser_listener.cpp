@@ -42,7 +42,7 @@ bool inDeBox(int theta, float r)
 
 bool diff(float a, float b)
 {
-	if(a<b-0.5 || a>b+0.05) //check: is a LT b minus 1/2 or GT b plus 1/20?
+	if(a<b-0.05 || a>b+0.05) //check: is a LT b minus 1/2 or GT b plus 1/20?
     {
 		return false;
 	}
@@ -66,9 +66,9 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
       //cout << inDeBox(i, laserScan->ranges[i]);
       //cout<<(laserScan->ranges[i]<0.75); //primitive visualization of lazerz
 
-      if (inDeBox(i, laserScan->ranges[i]) 
-          && diff(laserScan->ranges[i],laserScan->ranges[i-1]) 
-          && diff(laserScan->ranges[i],laserScan->ranges[i+1]))
+      if (inDeBox(i, laserScan->ranges[i])                      //is this ping within range, 
+          && diff(laserScan->ranges[i],laserScan->ranges[i-1])  //and not much shorter than 
+          && diff(laserScan->ranges[i],laserScan->ranges[i+1])) //its neighboring points?
       {
           objectInRange = true;
       }
