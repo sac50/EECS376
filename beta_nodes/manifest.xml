@@ -1,0 +1,16 @@
+<package>
+  <description brief="beta_nodes">
+
+     beta_nodes
+
+  </description>
+  <author>Albireo</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/beta_nodes</url>
+  <depend package="roscpp"/>
+  <depend package="cwru_base"/>
+
+</package>
+
+
