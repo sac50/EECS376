@@ -5,7 +5,7 @@
 #include <steering/obstacle.h>
 #include <iostream>
 
-#define HZ 100
+#define HZ 50
 #define PI 3.141562653589
 #define D2R 0.0174532925 //pi/180
 
@@ -30,8 +30,9 @@ bool inDeBox(int theta, float r)
     {
         if(abs(r*cos(theta*D2R))<(referenceMsg.boxWidth))
         {
-            cout << "front: " << r*sin(theta*D2R) << "side: " << r*cos(theta*D2R) << endl;            
+            //cout << "front: " << r*sin(theta*D2R) << "side: " << r*cos(theta*D2R) << endl;            
             result = true;
+            ROS_INFO("In the box, %f %f",abs(r*cos(theta*D2R)),abs(r*sin(theta*D2R)));
         }
     }
 
@@ -50,6 +51,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
     objectInRange = false;
     nearestTheta = 0;
     float shortestRange = 999.999;
+	ROS_INFO("AND SO");
 
     for(uint i = 1; i < 179; i++)
     {
@@ -89,7 +91,7 @@ int main(int argc, char **argv)
 
     ros::Rate r(HZ);
     
-    ros::Subscriber sub = n.subscribe("base_scan",1,laserCallback);
+    ros::Subscriber sub = n.subscribe("base_laser1_scan",1,laserCallback);
 
     ros::Publisher pub = n.advertise<steering::obstacle>("obstructions", 10);
     
