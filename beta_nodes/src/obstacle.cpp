@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 #include <cwru_base/Pose.h>
 #include <sensor_msgs/LaserScan.h>
-#include <laser_listener/obstacle.h>
+#include <beta_nodes/obstacle.h>
 #include <iostream>
 
 
@@ -32,7 +32,7 @@ bool holla = false;
 bool inDeBox(int theta, float r)
 {
 
-	laser_listener::obstacle referenceMsg; //this is used to get the constants from the message
+	beta_nodes::obstacle referenceMsg; //this is used to get the constants from the message
 	bool result = false;
 
 	if(abs(r*sin(theta*D2R))<referenceMsg.boxLength) //abs() hack for negative values ...
@@ -132,9 +132,9 @@ int main(int argc, char **argv)
 	
 	ros::Subscriber sub = n.subscribe(LISTENTOTHIS,1,laserCallback);
 
-	ros::Publisher pub = n.advertise<laser_listener::obstacle>("obstructions", 10);
+	ros::Publisher pub = n.advertise<beta_nodes::obstacle>("obstacle", 10);
 	
-	laser_listener::obstacle obstacleMsg;
+	beta_nodes::obstacle obstacleMsg;
 
 	//ros::spin();
 	while(!ros::Time::isValid())
