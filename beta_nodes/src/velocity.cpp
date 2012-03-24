@@ -9,6 +9,7 @@
 #include <geometry_msgs/Twist.h>
 #include "Path.h"
 #include <beta_nodes/velocityMsg.h>
+#include <beta_nodes/vPassBack.h>
 
 #define HALF_PI 1.6079633
 #define CW -1.0
@@ -43,12 +44,12 @@ double getPathDistanceLeft();
 double getVelocity();
 using namespace std;
 
-void MasterCallback(const beta_nodes::vPassBack::constPtr& p) {
+void masterCallback(const beta_nodes::vPassBack::ConstPtr& p) {
 	//path = p.path;
 	//segmentType = p.segmentType;
-	velocityPast = p.velocity;
-	posX = p.posX;
-	posY = p.posY;
+	velocityPast = p->vPast;
+	posX = p->posX;
+	posY = p->posY;
 }
 
 
@@ -116,6 +117,7 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "velocity"); 
 	ros::NodeHandle nodeHandle;
 	ros::Publisher publishVelocity = nodeHandle.advertise<beta_nodes::velocityMsg>("velocityMsg", 1);
+	ros::Subscriber sub = nodeHandle.subscribe("vPassBack",1, masterCallback);
 	ros::Rate r(HZ);	
 	beta_nodes::velocityMsg velocityMsg;	
 	// Subscriber to pose ?
@@ -132,10 +134,10 @@ int main(int argc, char** argv) {
 
 		// Get Path
 		Vector t1,t2;
-		t1.x=5.27;
-		t1.y=11.94;
-		t2.x=-3.43;
-		t2.y=20.69;
+		t1.x=2.48;
+		t1.y=2.24;
+		t2.x=-0.88;
+		t2.y=-1.19;
 		path.init(t1,t2,1);
 		Vector ignore = path.n_hatCalc();
 		velocityMsg.velocity = getVelocity();
