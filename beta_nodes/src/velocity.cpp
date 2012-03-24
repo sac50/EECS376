@@ -26,15 +26,26 @@ double segmentDistanceLeft = 0.0;
 bool braking=false;
 double time1 = 0.0;
 double dt = 0.1;
-
+// Get Path
+Path path;
+double velocityPast = 0;
+double velocityCommand = 0;
+double segmentDistanceDone = 0;
+double segmentType = 0;
 
 nav_msgs::Odometry lastOdometry;
 tf::TransformListener *transformListener;
 geometry_msgs::PoseStamped lastMapPose;
 
-double getPathDistanceLeft(Path path);
-double getVelocity(double velocityPast, double velocityCommand, double segmentDistanceDone, double segmentType, Path path);
+double getPathDistanceLeft();
+double getVelocity();
 using namespace std;
+
+void PathCallback(const beta_nodes::Path::constPtr& p) {
+	path = p.path;
+	segmentType = p.segmentType;
+	velocityPast = p.velocity;
+}
 
 /* Compute the min between two numbers */
 double min (double a, double b) {
@@ -49,13 +60,14 @@ double max (double a, double b) {
 }
 
 /* Get the Velocity that should be published */
-double getVelocity(double velocityPast, double velocityCommand, double segmentDistanceDone, double segmentType, Path path) {
+double getVelocity() {
 	double velocityScheduled;
 	geometry_msgs::Twist velocityCommandPublish;
 	// Dynamically defined breaking distance from commanded velocity
 	double brakingDistance = (velocityCommand/accelerationMax) * (velocityCommand/2);
 	time1 = time1 + dt;
 	segmentDistanceDone += ((velocityPast + velocityCommand)/2)*dt;
+	velocityPast = velocityCommand;
 	// continue on line 200 on command publisher
 	double pathDistanceLeft = getPathDistanceLeft(path);
 	if (pathDistanceLeft > brakingDistance && !braking) {
@@ -85,7 +97,7 @@ double getVelocity(double velocityPast, double velocityCommand, double segmentDi
 	return velocityCommand;
 }
 
-double getPathDistanceLeft(Path path) {
+double getPathDistanceLeft() {
 	double pathDistanceLeft = sqrt(abs(pow(path.getEnd().X()-lastMapPose.pose.position.x,2)+pow(path.getEnd().Y()-lastMapPose.pose.position.y,2)));
 	return pathDistanceLeft;
 }
@@ -108,19 +120,10 @@ int main(int argc, char** argv) {
 	while (ros::ok()) {
 		// Trigger Callbacks
 		ros::spinOnce();
-		// Callbacks set values
-		// Get VelocityPath
-		
-		// Get VelocityCommand
-
-		// Get Segment Distance Done
-
-		// Get Segment Type
 
 		// Get Path
-	//	geometry_msgs::Twist velocity = getVelocity(velocityPast, velocityCommand, segmentDistanceDone, segmentType, path);
 
-		velocityMsg.velocity = 1;
+		velocityMsg.velocity = getVelocity();
 		publishVelocity.publish(velocityMsg);
 
 		r.sleep();
