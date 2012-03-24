@@ -43,7 +43,6 @@ double getPathDistanceLeft();
 double getVelocity();
 using namespace std;
 
-
 void MasterCallback(const beta_nodes::vPassBack::constPtr& p) {
 	//path = p.path;
 	//segmentType = p.segmentType;

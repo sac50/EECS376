@@ -25,6 +25,7 @@ int priority=0;
 double HZ = 50;
 double dt = 1/HZ;
 beta_nodes::velocityMsg velocityMsg;
+Vector position;
 //beta_nodes::steeringMsg steeringMsg;
 //beta_nodes::obstacle obstacle;
 //beta_nodes::estopMsg estopMsg;
@@ -35,7 +36,8 @@ void obstructionsCallback(const beta_nodes::obstacle::ConstPtr& obs) {
 }
 
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
-
+	position.x = str->posX;
+	position.y = str->posY;
 }
 
 void velocityCallback(const beta_nodes::velocityMsg::ConstPtr& vel){
@@ -81,6 +83,8 @@ int main(int argc, char** argv) {
 		vel_object.linear.x = velocityMsg.velocity;
 		pub.publish(vel_object);
 		vPassBack.vPast = velocityMsg.velocity;
+		vPassBack.posX = position.x;
+		vPassBack.posY = position.y;
 		pub1.publish(vPassBack);
 		
 		naptime.sleep();
