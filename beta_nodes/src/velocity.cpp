@@ -32,6 +32,8 @@ double velocityPast = 0;
 double velocityCommand = 0;
 double segmentDistanceDone = 0;
 double segmentType = 0;
+double posX = 0;
+double posY = 0;
 
 nav_msgs::Odometry lastOdometry;
 tf::TransformListener *transformListener;
@@ -41,11 +43,15 @@ double getPathDistanceLeft();
 double getVelocity();
 using namespace std;
 
-void PathCallback(const beta_nodes::Path::constPtr& p) {
-	path = p.path;
-	segmentType = p.segmentType;
+
+void MasterCallback(const beta_nodes::vPassBack::constPtr& p) {
+	//path = p.path;
+	//segmentType = p.segmentType;
 	velocityPast = p.velocity;
+	posX = p.posX;
+	posY = p.posY;
 }
+
 
 /* Compute the min between two numbers */
 double min (double a, double b) {
@@ -69,7 +75,11 @@ double getVelocity() {
 	segmentDistanceDone += ((velocityPast + velocityCommand)/2)*dt;
 	velocityPast = velocityCommand;
 	// continue on line 200 on command publisher
-	double pathDistanceLeft = getPathDistanceLeft(path);
+	double pathDistanceLeft = getPathDistanceLeft();
+	ROS_INFO("Path Distance Left: %f", pathDistanceLeft);
+	ROS_INFO("SegmentDistance Done: %f", segmentDistanceDone);
+	ROS_INFO("Path Distance Left > breaking distance");
+	ROS_INFO("%f > %f", pathDistanceLeft, brakingDistance);
 	if (pathDistanceLeft > brakingDistance && !braking) {
 		velocityCommand = velocityCommand + accelerationMax*dt;
 		if (velocityCommand > velocityMax) {
@@ -98,7 +108,7 @@ double getVelocity() {
 }
 
 double getPathDistanceLeft() {
-	double pathDistanceLeft = sqrt(abs(pow(path.getEnd().X()-lastMapPose.pose.position.x,2)+pow(path.getEnd().Y()-lastMapPose.pose.position.y,2)));
+	double pathDistanceLeft = sqrt(abs(pow(path.getEnd().X()-posX,2)+pow(path.getEnd().Y()-posY,2)));
 	return pathDistanceLeft;
 }
 
@@ -119,11 +129,18 @@ int main(int argc, char** argv) {
 
 	while (ros::ok()) {
 		// Trigger Callbacks
-		ros::spinOnce();
+		//ros::spinOnce();
 
 		// Get Path
-
+		Vector t1,t2;
+		t1.x=5.27;
+		t1.y=11.94;
+		t2.x=-3.43;
+		t2.y=20.69;
+		path.init(t1,t2,1);
+		Vector ignore = path.n_hatCalc();
 		velocityMsg.velocity = getVelocity();
+		ROS_INFO("V: %f", velocityMsg.velocity);
 		publishVelocity.publish(velocityMsg);
 
 		r.sleep();
