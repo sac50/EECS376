@@ -107,6 +107,8 @@ int main(int argc,char **argv){
 		//xy_robot_coords = xy_robot_coords + [xdot;ydot]*dt;
 		
 		steeringMsg.omega_cmd = omega_cmd;
+		steeringMsg.posX = last_map_pose.pose.position.x;
+		steeringMsg.posY = last_map_pose.pose.position.y;
 		pub.publish(steeringMsg);
 		
 		time=time+dt;

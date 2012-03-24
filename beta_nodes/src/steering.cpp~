@@ -111,12 +111,5 @@ int main(int argc,char **argv){
 		
 		time=time+dt;
 		naptime.sleep();
-	}
-	
-	
-	
-	
-	ret.open();
-
-	
+	}	
 }
