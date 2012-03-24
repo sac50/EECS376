@@ -1,6 +1,7 @@
 #include<math.h>
 #include "Path.h"
 
+#define DONE 0
 #define LINE 1 
 #define ARC 2 
 #define SPIN 3
