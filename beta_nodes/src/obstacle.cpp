@@ -4,6 +4,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <beta_nodes/obstacle.h>
 #include <iostream>
+#include <beta_nodes/PathSegment.h>
 
 
 #define CUTOFF 5 //disregard this many degrees of laser scan from the edges
