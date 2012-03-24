@@ -1,6 +1,10 @@
 #include<math.h>
 #include "Path.h"
 
+#define LINE 1 
+#define ARC 2 
+#define SPIN 3
+
 const double pi = 3.141592;
 
 using namespace std;
