@@ -41,11 +41,11 @@ double getPathDistanceLeft();
 double getVelocity();
 using namespace std;
 
-void PathCallback(const beta_nodes::Path::constPtr& p) {
-	path = p.path;
-	segmentType = p.segmentType;
-	velocityPast = p.velocity;
-}
+//void PathCallback(const beta_nodes::Path::constPtr& p) {
+	//path = p.path;
+	//segmentType = p.segmentType;
+	//velocityPast = p.velocity;
+//}
 
 /* Compute the min between two numbers */
 double min (double a, double b) {
@@ -69,7 +69,7 @@ double getVelocity() {
 	segmentDistanceDone += ((velocityPast + velocityCommand)/2)*dt;
 	velocityPast = velocityCommand;
 	// continue on line 200 on command publisher
-	double pathDistanceLeft = getPathDistanceLeft(path);
+	double pathDistanceLeft = getPathDistanceLeft();
 	if (pathDistanceLeft > brakingDistance && !braking) {
 		velocityCommand = velocityCommand + accelerationMax*dt;
 		if (velocityCommand > velocityMax) {
