@@ -13,6 +13,7 @@
 #include <beta_nodes/velocityMsg.h>
 #include <beta_nodes/obstacle.h>
 #include <beta_nodes/vPassBack.h>
+#include <beta_nodes/PathSegment.h>
 //#include <beta_nodes/estopMsg.h>
 //#include <beta_nodes/pathMsg.h>
 
@@ -26,6 +27,7 @@ double HZ = 50;
 double dt = 1/HZ;
 beta_nodes::velocityMsg velocityMsg;
 Vector position;
+double omega_cmd;
 //beta_nodes::steeringMsg steeringMsg;
 //beta_nodes::obstacle obstacle;
 //beta_nodes::estopMsg estopMsg;
@@ -38,10 +40,13 @@ void obstructionsCallback(const beta_nodes::obstacle::ConstPtr& obs) {
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
 	position.y = str->posY;
+	omega_cmd = str->omega_cmd;
+	//ROS_INFO("Got Position");
 }
 
 void velocityCallback(const beta_nodes::velocityMsg::ConstPtr& vel){
 	velocityMsg.velocity = vel->velocity;
+	ROS_INFO("Velocity: %f",vel->velocity);
 }
 
 /*
@@ -62,11 +67,11 @@ int main(int argc, char** argv) {
 	ros::Rate naptime(HZ);
 	ros::Publisher pub = n.advertise<geometry_msgs::Twist>("cmd_vel",1);
 	ros::Publisher pub1 = n.advertise<beta_nodes::vPassBack>("vPast",1);
-	//ros::Subscriber sub = n.subscribe("velocity",1,velocityCallback);
-	//ros::Subscriber sub1 = n.subscribe("steering",1,steeringCallback);
+	ros::Subscriber sub = n.subscribe("velocityMsg",1,velocityCallback);
+	ros::Subscriber sub1 = n.subscribe("cmd_corr",1,steeringCallback);
 	//ros::Subscriber sub2 = n.subscribe("obstacle", 1,obstacleCallback);
 	//ros::Subscriber sub3 = n.subscribe("estop", 1,estopCallback);
-	//ros::Subscriber sub4 = n.subscribe("pathGen", 1,pathCallback);
+	//ros::Subscriber sub4 = n.subscribe("pathGen", 1,pathQueueCallback);
 
 	//"cmd_vel" is the topic name to publish velocity commands
 	//"1" is the buffer size (could use buffer>1 in case network bogs down)
@@ -81,6 +86,7 @@ int main(int argc, char** argv) {
 	while (ros::ok()){
 		ros::spinOnce();
 		vel_object.linear.x = velocityMsg.velocity;
+		vel_object.angular.z = omega_cmd;
 		pub.publish(vel_object);
 		vPassBack.vPast = velocityMsg.velocity;
 		vPassBack.posX = position.x;
