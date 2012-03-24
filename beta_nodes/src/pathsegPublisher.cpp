@@ -10,6 +10,7 @@
 #include "Path.h"
 
 #define Hz 50
+#define PI 3.14159265
 #define LINE 1
 #define ARC 2
 #define SPIN 3
@@ -86,6 +87,7 @@ int main(int argc,char **argv)
 
 		segLength = sqrt(pow(waypoints[curSeg][x] - waypoints[nextSeg][x], 2) +
 						 pow(waypoints[curSeg][y] - waypoints[nextSeg][y], 2));
+		dPhi = (waypoints[curSeg][phi]-waypoints[nextSeg][phi])%PI;
 
 		ROS_INFO("P%d: (%3.3f, %3.3f, %3.3f) => (%3.3f, %3.3f, %3.3f) (%.3fm, %.3fdeg)",
 			curSeg, waypoints[curSeg][x], waypoints[curSeg][y], waypoints[curSeg][phi],
