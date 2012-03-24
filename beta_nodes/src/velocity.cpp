@@ -9,6 +9,7 @@
 #include <geometry_msgs/Twist.h>
 #include "Path.h"
 #include <beta_nodes/velocityMsg.h>
+#include <beta_nodes/vPassBack.h>
 
 #define HALF_PI 1.6079633
 #define CW -1.0
@@ -32,6 +33,8 @@ double velocityPast = 0;
 double velocityCommand = 0;
 double segmentDistanceDone = 0;
 double segmentType = 0;
+double posX = 0;
+double posY = 0;
 
 nav_msgs::Odometry lastOdometry;
 tf::TransformListener *transformListener;
@@ -41,11 +44,14 @@ double getPathDistanceLeft();
 double getVelocity();
 using namespace std;
 
-//void PathCallback(const beta_nodes::Path::constPtr& p) {
+void masterCallback(const beta_nodes::vPassBack::ConstPtr& p) {
 	//path = p.path;
 	//segmentType = p.segmentType;
-	//velocityPast = p.velocity;
-//}
+	velocityPast = p->vPast;
+	posX = p->posX;
+	posY = p->posY;
+}
+
 
 /* Compute the min between two numbers */
 double min (double a, double b) {
@@ -70,6 +76,10 @@ double getVelocity() {
 	velocityPast = velocityCommand;
 	// continue on line 200 on command publisher
 	double pathDistanceLeft = getPathDistanceLeft();
+	ROS_INFO("Path Distance Left: %f", pathDistanceLeft);
+	ROS_INFO("SegmentDistance Done: %f", segmentDistanceDone);
+	ROS_INFO("Path Distance Left > breaking distance");
+	ROS_INFO("%f > %f", pathDistanceLeft, brakingDistance);
 	if (pathDistanceLeft > brakingDistance && !braking) {
 		velocityCommand = velocityCommand + accelerationMax*dt;
 		if (velocityCommand > velocityMax) {
@@ -98,7 +108,7 @@ double getVelocity() {
 }
 
 double getPathDistanceLeft() {
-	double pathDistanceLeft = sqrt(abs(pow(path.getEnd().X()-lastMapPose.pose.position.x,2)+pow(path.getEnd().Y()-lastMapPose.pose.position.y,2)));
+	double pathDistanceLeft = sqrt(abs(pow(path.getEnd().X()-posX,2)+pow(path.getEnd().Y()-posY,2)));
 	return pathDistanceLeft;
 }
 
@@ -107,6 +117,7 @@ int main(int argc, char** argv) {
 	ros::init(argc, argv, "velocity"); 
 	ros::NodeHandle nodeHandle;
 	ros::Publisher publishVelocity = nodeHandle.advertise<beta_nodes::velocityMsg>("velocityMsg", 1);
+	ros::Subscriber sub = nodeHandle.subscribe("vPassBack",1, masterCallback);
 	ros::Rate r(HZ);	
 	beta_nodes::velocityMsg velocityMsg;	
 	// Subscriber to pose ?
@@ -119,11 +130,18 @@ int main(int argc, char** argv) {
 
 	while (ros::ok()) {
 		// Trigger Callbacks
-		ros::spinOnce();
+		//ros::spinOnce();
 
 		// Get Path
-
+		Vector t1,t2;
+		t1.x=2.48;
+		t1.y=2.24;
+		t2.x=-0.88;
+		t2.y=-1.19;
+		path.init(t1,t2,1);
+		Vector ignore = path.n_hatCalc();
 		velocityMsg.velocity = getVelocity();
+		ROS_INFO("V: %f", velocityMsg.velocity);
 		publishVelocity.publish(velocityMsg);
 
 		r.sleep();
