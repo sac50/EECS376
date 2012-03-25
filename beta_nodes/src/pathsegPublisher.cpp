@@ -8,18 +8,29 @@
 #include<tf/transform_datatypes.h> //for tf::getYaw and create quaternion
 #include <beta_nodes/steeringMsg.h>
 #include "Path.h"
+#include <vector>
 
 #define Hz 50
 #define LINE 1
 #define ARC 2
 #define SPIN 3
 
+using namespace std;
+
 Vector position;
+beta_nodes::PathSegment avoidancePatch;
+vector<beta_nodes::PathSegment> pathQueue;
 
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
 	position.y = str->posY;
 }
+
+void avoidanceCallback(const beta_nodes::PathSegment::ConstPtr& pth){
+	//ROS_INFO("%d",pth->seg_type);
+	avoidancePatch = *pth;
+}
+
 /*
 const double waypoints =  //[map x, map y, map phi]
 	[[8.42, 15.09, -137.16], //start
@@ -36,6 +47,7 @@ int main(int argc,char **argv)
 	ros::NodeHandle n;
 	ros::Publisher pubseg = n.advertise<beta_nodes::PathSegment>("paths",1);
 	ros::Subscriber sub = n.subscribe("cmd_corr",1,steeringCallback);
+	ros::Subscriber sub1 = n.subscribe("replanning",1,avoidanceCallback);
 
 	ros::Duration elapsed_time; // define a variable to hold elapsed time
 	ros::Rate naptime(Hz); //will perform sleeps to enforce loop rate of "10" Hz
@@ -44,7 +56,7 @@ int main(int argc,char **argv)
 	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
 	ROS_INFO("birthday started as %f", birthday.toSec());
 
-
+	int segNum = 0; //The ass end of our current PathQueue vector
 	beta_nodes::PathSegment curPathSeg; // create an instance of datatype PathSegment
 	//dummy population of PathSegment fields
 //	curPathSeg.curvature = 3.14;
@@ -58,12 +70,25 @@ int main(int argc,char **argv)
 //	curPathSeg.max_speeds.angular.z=1.23;
 //	curPathSeg.accel_limit=4.56;
 //	curPathSeg.decel_limit=5.67;
+	pathQueue.push_back(curPathSeg);
+	
 
 	double DistToGo;
 
 	while (ros::ok()) // do work here
 	{
 		ros::spinOnce();
+		
+		if(avoidancePatch.seg_type!=0){
+			pathQueue.push_back(avoidancePatch);
+			segNum++;
+		}
+		if(segNum<0){
+			curPathSeg.seg_type=0;
+		}
+		else{
+			curPathSeg = pathQueue[segNum];
+		}
 //		elapsed_time= ros::Time::now()-birthday;
 //		ROS_INFO("birthday is %f", birthday.toSec());
 //		ROS_INFO("elapsed time is %f", elapsed_time.toSec());
@@ -71,7 +96,8 @@ int main(int argc,char **argv)
 //		curPathSeg.seg_length= elapsed_time.toSec();
 		ROS_INFO("%f - %f + %f - %f = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
 		if(DistToGo<0.1){
-			curPathSeg.seg_type = 0;
+			pathQueue.pop_back();
+			segNum--;	
 		}
 		pubseg.publish(curPathSeg); // publish the path segment
 

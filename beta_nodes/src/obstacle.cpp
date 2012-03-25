@@ -5,6 +5,8 @@
 #include <beta_nodes/obstacle.h>
 #include <iostream>
 #include <beta_nodes/PathSegment.h>
+#include <beta_nodes/steeringMsg.h>
+#include "Path.h"
 
 
 #define CUTOFF 5 //disregard this many degrees of laser scan from the edges
@@ -24,12 +26,20 @@ int firstObstacleTheta;
 int lastObstacleTheta;
 bool objectInRange = false;
 bool holla = false;
+Vector position,midPoint;
 
 // For using the LaserScan, see http://www.ros.org/doc/api/sensor_msgs/html/msg/LaserScan.html
 
 //inDeBox tells if a point at a given theta and radial distance from the laser 
 //lies in a rectrangular area infront of the robot, whose width and length are 
 //defined for fun in the 'obstacle' message 
+
+void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
+	position.x = str->posX;
+	position.y = str->posY;
+	//ROS_INFO("Got Position");
+}
+
 bool inDeBox(int theta, float r)
 {
 
@@ -44,6 +54,20 @@ bool inDeBox(int theta, float r)
 			cout << "x";
 			result = true;
 		}
+	}
+
+	return result;
+}
+
+bool inThreatRange(int theta, float r)
+{
+
+	beta_nodes::obstacle referenceMsg; //this is used to get the constants from the message
+	bool result = false;
+
+	if(abs(r*sin(theta*D2R))<referenceMsg.threatRange) //abs() hack for negative values ...
+	{
+		result = true;
 	}
 
 	return result;
@@ -70,6 +94,9 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	float shortestRange = 999.999;
 	float jag;
 	bool jagFlag = false;
+	bool eventType=false;
+	int leftI=180, rightI=0;
+	Vector leftPoint,rightPoint;
 	cout << "-=-=-=-=-=-=-= C A L L B A C K =-=-=-=-=-=-=-=-=-";
 
 	rightClearance = laserScan->ranges[CUTOFF];
@@ -108,6 +135,37 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 		  objectInRange = true;
 		  lastObstacleTheta = i; //will be overwritten until the last ping indebox
 	  }
+	  
+	  if(!inThreatRange(i,laserScan->ranges[i])
+	  	&& diff(laserScan->ranges[i],laserScan->ranges[i-1])
+	  	&& diff(laserScan->ranges[i],laserScan->ranges[i+1]))
+	  {
+	  	if(eventType==false){
+	  		eventType = true;
+	  		//Store initial point
+	  		rightI=i;
+	  		rightPoint.x = laserScan->ranges[i]*cos(i*D2R);
+	  		rightPoint.y = laserScan->ranges[i]*sin(i*D2R);
+	  	}
+	  }
+	  else if(inThreatRange(i,laserScan->ranges[i])
+	  	&& diff(laserScan->ranges[i],laserScan->ranges[i-1])
+	  	&& diff(laserScan->ranges[i],laserScan->ranges[i+1]))
+	  {
+	  	if(eventType){
+	  		eventType=false;
+	  		//Store end point, store event
+	  		//If not wide enough don't store
+	  		leftI = i;
+	  		leftPoint.x = laserScan->ranges[i]*cos(i*D2R);
+	  		leftPoint.y = laserScan->ranges[i]*sin(i*D2R);
+	  		if(abs(laserScan->ranges[leftI]*cos(leftI*D2R)) - abs(laserScan->ranges[rightI]*cos(rightI*D2R))> 0.6){
+	  			//Store it
+	  			midPoint.x = (leftPoint.x-rightPoint.x)/2;
+	  			midPoint.y = (leftPoint.y-rightPoint.y)/2;
+	  		}
+	  	}
+	  }
 	  /*
 	  if (laserScan->ranges[i]<0.75)
 	  {
@@ -132,10 +190,15 @@ int main(int argc, char **argv)
 	ros::Rate r(HZ);
 	
 	ros::Subscriber sub = n.subscribe(LISTENTOTHIS,1,laserCallback);
+	
+	ros::Subscriber sub1 = n.subscribe("cmd_corr",1,steeringCallback);
 
 	ros::Publisher pub = n.advertise<beta_nodes::obstacle>("obstacle", 10);
 	
+	ros::Publisher pub1 = n.advertise<beta_nodes::PathSegment>("replanning",1);
+	
 	beta_nodes::obstacle obstacleMsg;
+	beta_nodes::PathSegment pathSegment;
 
 	//ros::spin();
 	while(!ros::Time::isValid())
@@ -178,7 +241,16 @@ int main(int argc, char **argv)
 		{
 		//	  cout << "RATE IS MORE THAN FAST ENOUGH" << endl;
 		}
-
+		if(nearestObstacle < 0.55){
+			pathSegment.ref_point.x = midPoint.x;
+			pathSegment.ref_point.y = midPoint.y;
+			pathSegment.seg_type = 1;
+			pub1.publish(pathSegment);
+		}
+		else{
+			pathSegment.seg_type = 0;
+			pub1.publish(pathSegment);
+		}
 		r.sleep();
 
 	}
