@@ -10,22 +10,9 @@
 #include "Path.h"
 
 #define Hz 50
-#define PI 3.14159265
 #define LINE 1
 #define ARC 2
 #define SPIN 3
-#define x 0
-#define y 1
-#define phi 2
-
-const double waypoints[][3] =  //[map x, map y, map phi]
-	{{8.42, 15.09, -137.16}, //start
-	 {5.27, 11.99, -133.33}, //lab door
-	 {5.27, 11.99, 134.99}, //after 90deg turn
-	 {0.02, 17.14, 134.99},  //halfway down hall
-	 {-3.25, 20.71, 137.86}, //at "T"
-	 {-3.25, 20.71, 40.46}, //after second spin
-	 {1.00, 24.75, 40.46}}; //end
 
 Vector position;
 
@@ -33,7 +20,16 @@ void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
 	position.y = str->posY;
 }
-
+/*
+const double waypoints =  //[map x, map y, map phi]
+	[[8.42, 15.09, -137.16], //start
+	 [5.27, 11.99, -133.33], //lab door
+	 [5.27, 11.99, 134.99], //after 90deg turn
+	 [0.02, 17.14, 134.99],  //halfway down hall
+	 [-3.25, 20.71, 137.86], //at "T"
+	 [-3.25, 20.71, 40.46], //after second spin
+	 [1.00, 24.75, 40.46]]; //end
+*/
 int main(int argc,char **argv)
 {
 	ros::init(argc,argv,"paths");//name of this node
@@ -48,6 +44,7 @@ int main(int argc,char **argv)
 	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
 	ROS_INFO("birthday started as %f", birthday.toSec());
 
+
 	beta_nodes::PathSegment curPathSeg; // create an instance of datatype PathSegment
 	//dummy population of PathSegment fields
 //	curPathSeg.curvature = 3.14;
@@ -61,14 +58,8 @@ int main(int argc,char **argv)
 //	curPathSeg.max_speeds.angular.z=1.23;
 //	curPathSeg.accel_limit=4.56;
 //	curPathSeg.decel_limit=5.67;
- 	int curSeg = 0;
-	int nextSeg = 0;
-	int numSegs = sizeof(waypoints)/(sizeof(double)*3);
-	double segLength = 0.0;
-	double dPhi = 0.0;
 
-	ROS_INFO(" %d segments read.", numSegs);
-	double distToGo;
+	double DistToGo;
 
 	while (ros::ok()) // do work here
 	{
@@ -78,27 +69,13 @@ int main(int argc,char **argv)
 //		ROS_INFO("elapsed time is %f", elapsed_time.toSec());
 		DistToGo = sqrt(pow(curPathSeg.ref_point.x-position.x,2)+pow(curPathSeg.ref_point.y-position.y,2));
 //		curPathSeg.seg_length= elapsed_time.toSec();
-		//pubseg.publish(curPathSeg); // publish the path segment
-		nextSeg = curSeg + 1;
-		if(nextSeg > numSegs)
-		{
-			nextSeg = curSeg;
-		}
-
-		segLength = sqrt(pow(waypoints[curSeg][x] - waypoints[nextSeg][x], 2) +
-						 pow(waypoints[curSeg][y] - waypoints[nextSeg][y], 2));
-		dPhi = (waypoints[curSeg][phi]-waypoints[nextSeg][phi])%PI;
-
-		ROS_INFO("P%d: (%3.3f, %3.3f, %3.3f) => (%3.3f, %3.3f, %3.3f) (%.3fm, %.3fdeg)",
-			curSeg, waypoints[curSeg][x], waypoints[curSeg][y], waypoints[curSeg][phi],
-			waypoints[nextSeg][x], waypoints[nextSeg][y], waypoints[nextSeg][phi], 
-			segLength, dPhi);
-			
-		ROS_INFO("%f - %f + %f - %f = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,distToGo);
-		if(distToGo<0.1){
+		ROS_INFO("%f - %f + %f - %f = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
+		if(DistToGo<0.1){
 			curPathSeg.seg_type = 0;
 		}
 		pubseg.publish(curPathSeg); // publish the path segment
+
+
 
 		naptime.sleep(); // this will achieve the desired update rate (10Hz)
 	}
