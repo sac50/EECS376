@@ -47,6 +47,12 @@ void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	if(pth->seg_type == 0){
 		path.type = 0;
 	}
+	path.start.x = pth->init_point.x;
+	path.start.y = pth->init_point.y;
+	path.end.x = pth->ref_point.x;
+	path.end.y = pth->ref_point.y;
+	path.type = pth->seg_type;
+	path.seg_psi = pth->seg_psi;
 }
 
 int main(int argc,char **argv){

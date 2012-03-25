@@ -17,6 +17,8 @@
 
 using namespace std;
 
+bool inAvoid=false;
+
 Vector position;
 beta_nodes::PathSegment avoidancePatch;
 vector<beta_nodes::PathSegment> pathQueue;
@@ -63,8 +65,11 @@ int main(int argc,char **argv)
 //	curPathSeg.seg_length=0.0;
 	curPathSeg.ref_point.x=-0.4;
 	curPathSeg.ref_point.y=0.4;
+	curPathSeg.init_point.x=-2.48;
+	curPathSeg.init_point.y=2.24;
 //	curPathSeg.seg_number=123;
 	curPathSeg.seg_type=1;
+	curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
 //	curPathSeg.init_tan_angle=tf::createQuaternionMsgFromYaw(1.23);
 //	curPathSeg.max_speeds.linear.x=3.45;
 //	curPathSeg.max_speeds.angular.z=1.23;
@@ -79,7 +84,16 @@ int main(int argc,char **argv)
 	{
 		ros::spinOnce();
 		
+		//avoidancePatch.init_point.x += position.x;
+		//avoidancePatch.init_point.y += position.y;
+		//avoidancePatch.ref_point.x = avoidancePatch.init_point.x + cos(curPathSeg.seg_psi);
+		//avoidancePatch.ref_point.y = avoidancePatch.init_point.y + sin(curPathSeg.seg_psi);
+		//avoidancePatch.seg_psi = curPathSeg.seg_psi;
 		if(avoidancePatch.seg_type!=0){
+			if(inAvoid){
+				pathQueue.pop_back();
+			}
+			inAvoid=true;
 			pathQueue.push_back(avoidancePatch);
 			segNum++;
 		}
@@ -96,6 +110,9 @@ int main(int argc,char **argv)
 //		curPathSeg.seg_length= elapsed_time.toSec();
 		ROS_INFO("%f - %f + %f - %f = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
 		if(DistToGo<0.1){
+			if(inAvoid){
+				inAvoid=false;
+			}
 			pathQueue.pop_back();
 			segNum--;	
 		}

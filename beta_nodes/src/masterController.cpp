@@ -90,7 +90,7 @@ void holdingPattern(double time, ros::Publisher vel_pub, ros::Publisher passback
 }
 
 int main(int argc, char** argv) {
-	ros::init(argc,argv,"MasterController");//name of this node
+	ros::init(argc,argv,"masterController");//name of this node
 	ros::NodeHandle n;
 	ros::Rate naptime(HZ);
 	ros::Publisher vel_pub = n.advertise<geometry_msgs::Twist>("cmd_vel",1);

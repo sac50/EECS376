@@ -22,7 +22,7 @@
 #define SPIN_IN_PLACE 2
 #define ARC_PATH 3
 
-double velocityMax = 0.75;  // Default Speedlimit.  Should be set by path class
+double velocityMax = 0.50;  // Default Speedlimit.  Should be set by path class
 double accelerationMax = 0.25; //  Default Acceleration.  Should be set by the path class
 double segmentDistanceLeft = 0.0;
 bool braking=false;
@@ -58,6 +58,9 @@ void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	if(pth->seg_type == 0){
 		path.type = 0;
 	}
+	path.end.x = pth->ref_point.x;
+	path.end.y = pth->ref_point.y;
+	path.type = pth->seg_type;
 }
 
 

@@ -9,6 +9,9 @@ int8 SPIN_IN_PLACE = 3
 #Segment type
 int8 seg_type
 
+#priority flag
+int8 priority
+
 #Segment number
 uint32 seg_number
 
@@ -16,8 +19,10 @@ uint32 seg_number
 float64 seg_length
 
 #Reference point
+geometry_msgs/Point init_point
 geometry_msgs/Point ref_point
 geometry_msgs/Quaternion init_tan_angle
+float32 seg_psi
 
 #Curvature
 float64 curvature

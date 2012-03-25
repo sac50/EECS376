@@ -10,10 +10,10 @@
 
 
 #define CUTOFF 5 //disregard this many degrees of laser scan from the edges
-#define HZ 100
+#define HZ 60
 #define PI 3.141562653589
 #define D2R 0.0174532925 //pi/180
-#define LISTENTOTHIS "base_scan" // "base_laser1_scan" for jinx
+#define LISTENTOTHIS "base_laser1_scan" // "base_laser1_scan" for jinx
 
 using namespace std;
 float nearestObstacle;
@@ -26,6 +26,8 @@ int firstObstacleTheta;
 int lastObstacleTheta;
 bool objectInRange = false;
 bool holla = false;
+bool haveApproached=false;
+bool postApproach=false;
 Vector position,midPoint;
 
 // For using the LaserScan, see http://www.ros.org/doc/api/sensor_msgs/html/msg/LaserScan.html
@@ -51,7 +53,7 @@ bool inDeBox(int theta, float r)
 		if(abs(r*cos(theta*D2R))<(referenceMsg.boxWidth))
 		{
 			//cout << "front: " << r*sin(theta*D2R) << "	side: " << r*cos(theta*D2R) << endl;			
-			cout << "x";
+			//cout << "x";
 			result = true;
 		}
 	}
@@ -67,6 +69,7 @@ bool inThreatRange(int theta, float r)
 
 	if(abs(r*sin(theta*D2R))<referenceMsg.threatRange) //abs() hack for negative values ...
 	{
+		//ROS_INFO("IN THREAT RANGE");
 		result = true;
 	}
 
@@ -97,25 +100,19 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	bool eventType=false;
 	int leftI=180, rightI=0;
 	Vector leftPoint,rightPoint;
-	cout << "-=-=-=-=-=-=-= C A L L B A C K =-=-=-=-=-=-=-=-=-";
+	//cout << "-=-=-=-=-=-=-= C A L L B A C K =-=-=-=-=-=-=-=-=-";
 
 	rightClearance = laserScan->ranges[CUTOFF];
 	leftClearance = laserScan->ranges[180-CUTOFF];
 
 	for(uint i = CUTOFF; i < 180-CUTOFF; i++)
 	{
-	  if (laserScan->ranges[i]<shortestRange)
-	  {
-		  shortestRange = laserScan->ranges[i];
-		  nearestTheta = i;
-	  }
-
 	  jag = abs(laserScan->ranges[i]-laserScan->ranges[i-1]); //NOTE: focusing on obstacle=s on our left 
 	  if (jag > edgeDetectThreshold && !jagFlag)
 	  {
 			edgeDistance = laserScan->ranges[i];
 			edgeTheta = i;  
-			cout << "JAGGINESS@"<<i<<": " << jag << endl;
+			//cout << "JAGGINESS@"<<i<<": " << jag << endl;
 	  }
 	  
 	  //cout << inDeBox(i, laserScan->ranges[i]);
@@ -125,6 +122,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 		  && diff(laserScan->ranges[i],laserScan->ranges[i-1])	//and not much shorter than 
 		  && diff(laserScan->ranges[i],laserScan->ranges[i+1])) //its neighboring points?
 	  {
+	  	postApproach=true;
 		  if (!jagFlag)
 			  jagFlag = true;
 
@@ -134,6 +132,11 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 		  }
 		  objectInRange = true;
 		  lastObstacleTheta = i; //will be overwritten until the last ping indebox
+		if (laserScan->ranges[i]<shortestRange)
+		{
+			shortestRange = laserScan->ranges[i];
+			nearestTheta = i;
+		}
 	  }
 	  
 	  if(!inThreatRange(i,laserScan->ranges[i])
@@ -236,15 +239,26 @@ int main(int argc, char **argv)
 			obstacleMsg.lastObstacleTheta = lastObstacleTheta;
 			
 			pub.publish(obstacleMsg);
+			if(postApproach){
+				postApproach=false;
+				pathSegment.init_point.x = position.x;
+				pathSegment.init_point.y = position.y;
+				pathSegment.ref_point.x = position.x + (nearestObstacle-0.55)*cos(pathSegment.seg_psi);
+				pathSegment.ref_point.y = position.y + (nearestObstacle-0.55)*sin(pathSegment.seg_psi);
+				pathSegment.priority = 1;
+				pathSegment.seg_type = 1;
+				pathSegment.seg_psi = atan2((pathSegment.ref_point.y-pathSegment.init_point.y),(pathSegment.ref_point.x-pathSegment.init_point.x));;
+			}
 		}
 		else 
 		{
 		//	  cout << "RATE IS MORE THAN FAST ENOUGH" << endl;
 		}
-		if(nearestObstacle < 0.55){
-			pathSegment.ref_point.x = midPoint.x;
-			pathSegment.ref_point.y = midPoint.y;
+		if(haveApproached && nearestObstacle < 0.55 && inDeBox(nearestTheta,nearestObstacle/sin((((180-nearestTheta)*PI)/180.0)))){
+			pathSegment.init_point.x = midPoint.x;
+			pathSegment.init_point.y = midPoint.y;
 			pathSegment.seg_type = 1;
+			ROS_INFO("Publishing New %d %f",nearestTheta,nearestObstacle);
 			pub1.publish(pathSegment);
 		}
 		else{
