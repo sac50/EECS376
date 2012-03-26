@@ -1,7 +1,15 @@
+// pathsegPublisher.cpp
+// inputs: 	a file of waypoints to generate the initial path segments,
+//			"cmd_corr" - corrective heading, map x-y
+//			"replanning" - where new path suggestions are published
+// outputs: "paths" - top of a list of path segments to traverse
+
 //Publish paths from some source, maybe 
 
 //TODO: add ability to push some new segment to the front of the queue
-//want to conert waypoints to path segments 
+//want to convert waypoints to path segments first, publish,
+//publish new path segments under some conditions 
+//like when stopped in front of obstacles
 #include<ros/ros.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
 #include<beta_nodes/PathSegment.h>
@@ -33,16 +41,6 @@ void avoidanceCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	avoidancePatch = *pth;
 }
 
-/*
-const double waypoints =  //[map x, map y, map phi]
-	[[8.42, 15.09, -137.16], //start
-	 [5.27, 11.99, -133.33], //lab door
-	 [5.27, 11.99, 134.99], //after 90deg turn
-	 [0.02, 17.14, 134.99],  //halfway down hall
-	 [-3.25, 20.71, 137.86], //at "T"
-	 [-3.25, 20.71, 40.46], //after second spin
-	 [1.00, 24.75, 40.46]]; //end
-*/
 int main(int argc,char **argv)
 {
 	ros::init(argc,argv,"paths");//name of this node

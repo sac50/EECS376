@@ -32,9 +32,6 @@ Vector position,midPoint;
 
 // For using the LaserScan, see http://www.ros.org/doc/api/sensor_msgs/html/msg/LaserScan.html
 
-//inDeBox tells if a point at a given theta and radial distance from the laser 
-//lies in a rectrangular area infront of the robot, whose width and length are 
-//defined for fun in the 'obstacle' message 
 
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
@@ -42,6 +39,9 @@ void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	//ROS_INFO("Got Position");
 }
 
+//inDeBox tells if a point at a given theta and radial distance from the laser 
+//lies in a rectrangular area infront of the robot, whose width and length are 
+//defined for fun in the 'obstacle' message 
 bool inDeBox(int theta, float r)
 {
 
@@ -60,6 +60,8 @@ bool inDeBox(int theta, float r)
 
 	return result;
 }
+
+
 
 bool inThreatRange(int theta, float r)
 {
@@ -264,6 +266,7 @@ int main(int argc, char **argv)
 		else{
 			pathSegment.seg_type = 0;
 			pub1.publish(pathSegment);
+			ROS_INFO("Publishing NOTHING."); // I can't tell what's being published, so ... -charles
 		}
 		r.sleep();
 

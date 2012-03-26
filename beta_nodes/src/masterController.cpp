@@ -24,7 +24,7 @@
 
 int priority=0;
 double HZ = 50;
-double dt = 1/HZ;
+double dt = 1.0/HZ;
 beta_nodes::velocityMsg velocityMsg;
 Vector position;
 double omega_cmd;
