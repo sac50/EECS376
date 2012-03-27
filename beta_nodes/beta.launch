@@ -2,8 +2,8 @@
 	<node name="masterController" pkg="beta_nodes" type="masterController"/>
 	<node name="steering" pkg="beta_nodes" type="steering"/>
 	<node name="estop" pkg="beta_nodes" type="estop"/>
-	<node name="obstacle" pkg="beta_nodes" type="obstacle"/>
+	
 	<node name="paths" pkg="beta_nodes" type="paths"/>
-	<node name="velocity" pkg="beta_nodes" type="velocity"/>
+	
 </launch>
 	

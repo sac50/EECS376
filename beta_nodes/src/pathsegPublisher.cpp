@@ -26,6 +26,7 @@
 using namespace std;
 
 bool inAvoid=false;
+bool needToReplan=false;
 
 Vector position;
 beta_nodes::PathSegment avoidancePatch;
@@ -68,6 +69,7 @@ int main(int argc,char **argv)
 //	curPathSeg.seg_number=123;
 	curPathSeg.seg_type=1;
 	curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
+	ROS_INFO("Current Segment PSI: %f", curPathSeg.seg_psi);
 //	curPathSeg.init_tan_angle=tf::createQuaternionMsgFromYaw(1.23);
 //	curPathSeg.max_speeds.linear.x=3.45;
 //	curPathSeg.max_speeds.angular.z=1.23;
@@ -88,11 +90,18 @@ int main(int argc,char **argv)
 		//avoidancePatch.ref_point.y = avoidancePatch.init_point.y + sin(curPathSeg.seg_psi);
 		//avoidancePatch.seg_psi = curPathSeg.seg_psi;
 		if(avoidancePatch.seg_type!=0){
+			
 			if(inAvoid){
 				pathQueue.pop_back();
 			}
-			inAvoid=true;
+			else if(avoidancePatch.seg_type==4 && !inAvoid){
+				//yup
+			}
+			else{
+				inAvoid=true;
+			}
 			pathQueue.push_back(avoidancePatch);
+			avoidancePatch.seg_type=0;
 			segNum++;
 		}
 		if(segNum<0){
@@ -101,18 +110,35 @@ int main(int argc,char **argv)
 		else{
 			curPathSeg = pathQueue[segNum];
 		}
+		if(needToReplan){
+			curPathSeg.seg_type=0;
+		}
 //		elapsed_time= ros::Time::now()-birthday;
 //		ROS_INFO("birthday is %f", birthday.toSec());
 //		ROS_INFO("elapsed time is %f", elapsed_time.toSec());
 		DistToGo = sqrt(pow(curPathSeg.ref_point.x-position.x,2)+pow(curPathSeg.ref_point.y-position.y,2));
 //		curPathSeg.seg_length= elapsed_time.toSec();
-		ROS_INFO("%f - %f + %f - %f = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
+		ROS_INFO("sqrt((%2.2f- %2.2f)^2 + (%2.2f- %2.2f)^2) = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
 		if(DistToGo<0.1){
+			if(needToReplan && !inAvoid){
+				needToReplan=false;
+			}
 			if(inAvoid){
 				inAvoid=false;
+				needToReplan=true;
+				//curPathSeg.seg_type = 0;
 			}
 			pathQueue.pop_back();
 			segNum--;	
+		}
+		if(needToReplan){
+			if(avoidancePatch.seg_type==4){
+				curPathSeg=pathQueue[segNum];
+				avoidancePatch.seg_type==0;
+			}
+			else{
+				curPathSeg.seg_type = 0;
+			}
 		}
 		pubseg.publish(curPathSeg); // publish the path segment
 

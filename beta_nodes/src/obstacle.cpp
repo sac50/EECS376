@@ -10,9 +10,10 @@
 
 
 #define CUTOFF 5 //disregard this many degrees of laser scan from the edges
-#define HZ 60
+#define HZ 50
 #define PI 3.141562653589
 #define D2R 0.0174532925 //pi/180
+#define R2D 57.2957795
 #define LISTENTOTHIS "base_laser1_scan" // "base_laser1_scan" for jinx
 
 using namespace std;
@@ -29,6 +30,7 @@ bool holla = false;
 bool haveApproached=false;
 bool postApproach=false;
 Vector position,midPoint;
+Path path;
 
 // For using the LaserScan, see http://www.ros.org/doc/api/sensor_msgs/html/msg/LaserScan.html
 
@@ -37,6 +39,18 @@ void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
 	position.y = str->posY;
 	//ROS_INFO("Got Position");
+}
+
+void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth){
+	if(pth->seg_type == 0){
+		path.type = 0;
+	}
+	path.start.x = pth->init_point.x;
+	path.start.y = pth->init_point.y;
+	path.end.x = pth->ref_point.x;
+	path.end.y = pth->ref_point.y;
+	path.type = pth->seg_type;
+	path.seg_psi = pth->seg_psi;
 }
 
 //inDeBox tells if a point at a given theta and radial distance from the laser 
@@ -186,6 +200,18 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	//cout<<endl;
 }
 
+void holdingPattern(double time){
+	double t=0;
+	double dt = 1.0/50.0;
+	ros::Rate naptime(HZ);
+	while(ros::ok() && t<time){
+		ros::spinOnce();
+		t=t+dt;	
+		naptime.sleep();
+	}
+	return;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "laser_listener");
@@ -197,6 +223,8 @@ int main(int argc, char **argv)
 	ros::Subscriber sub = n.subscribe(LISTENTOTHIS,1,laserCallback);
 	
 	ros::Subscriber sub1 = n.subscribe("cmd_corr",1,steeringCallback);
+	
+	ros::Subscriber sub2 = n.subscribe("paths",1,pathQueueCallback);
 
 	ros::Publisher pub = n.advertise<beta_nodes::obstacle>("obstacle", 10);
 	
@@ -204,12 +232,17 @@ int main(int argc, char **argv)
 	
 	beta_nodes::obstacle obstacleMsg;
 	beta_nodes::PathSegment pathSegment;
-
+	double distToGo;
+	Vector avoidPoint;
+	avoidPoint.x=999;
+	avoidPoint.y=999;
 	//ros::spin();
 	while(!ros::Time::isValid())
 	{
 		ros::spinOnce();
 	}
+	
+	holdingPattern(1);
 
 	while(ros::ok())
 	{
@@ -225,6 +258,7 @@ int main(int argc, char **argv)
 			if (objectInRange)
 			{
 				obstacleMsg.obstacle = true;
+				//ROS_INFO("%f %d",nearestObstacle, nearestTheta);
 			}
 			else
 			{
@@ -241,6 +275,38 @@ int main(int argc, char **argv)
 			obstacleMsg.lastObstacleTheta = lastObstacleTheta;
 			
 			pub.publish(obstacleMsg);
+			
+			//Check to see if nearestObstacle is farther away than the current desired end point
+			//If so, ignore, if not publish new seg to end at .55m away, or if it's closer, 30% away, or stop.
+			distToGo = sqrt(pow(path.end.x-position.x,2)+pow(path.end.y-position.y,2));
+			//ROS_INFO("%f",distToGo);
+			if(obstacleMsg.obstacle && distToGo > nearestObstacle+0.55 && !haveApproached){
+				//Publish new path to close ish
+				//Will need to check for when an object pops in < 0.55m away
+				pathSegment.init_point.x = position.x;
+				pathSegment.init_point.y = position.y;
+				pathSegment.ref_point.x = position.x + (nearestObstacle-0.55)*cos(path.seg_psi);
+				pathSegment.ref_point.y = position.y + (nearestObstacle-0.55)*sin(path.seg_psi);
+				avoidPoint.x = pathSegment.ref_point.x;
+				avoidPoint.y = pathSegment.ref_point.y;
+				pathSegment.seg_psi = path.seg_psi;
+				pathSegment.seg_type = 1;
+				pub1.publish(pathSegment);
+				haveApproached=true;
+				ROS_INFO("Pubed Path %f %f %f", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55);
+			}
+			distToGo = sqrt(pow(avoidPoint.x-position.x,2)+pow(avoidPoint.y-position.y,2));
+			if(distToGo < 0.1 && haveApproached && !postApproach){
+				postApproach=true;
+				pathSegment.init_point.x = midPoint.x;
+				pathSegment.init_point.y = midPoint.y;
+				pathSegment.ref_point.x = midPoint.x + cos(path.seg_psi);
+				pathSegment.ref_point.y = midPoint.y + sin(path.seg_psi);
+				pathSegment.seg_type = 4;
+				pub1.publish(pathSegment);
+				ROS_INFO("Pubed Correction Seg %f %f", pathSegment.ref_point.x,pathSegment.ref_point.y);
+			}
+			/*
 			if(postApproach){
 				postApproach=false;
 				pathSegment.init_point.x = position.x;
@@ -251,11 +317,13 @@ int main(int argc, char **argv)
 				pathSegment.seg_type = 1;
 				pathSegment.seg_psi = atan2((pathSegment.ref_point.y-pathSegment.init_point.y),(pathSegment.ref_point.x-pathSegment.init_point.x));;
 			}
+			*/
 		}
 		else 
 		{
 		//	  cout << "RATE IS MORE THAN FAST ENOUGH" << endl;
 		}
+		/*
 		if(haveApproached && nearestObstacle < 0.55 && inDeBox(nearestTheta,nearestObstacle/sin((((180-nearestTheta)*PI)/180.0)))){
 			pathSegment.init_point.x = midPoint.x;
 			pathSegment.init_point.y = midPoint.y;
@@ -268,6 +336,7 @@ int main(int argc, char **argv)
 			pub1.publish(pathSegment);
 			ROS_INFO("Publishing NOTHING."); // I can't tell what's being published, so ... -charles
 		}
+		*/
 		r.sleep();
 
 	}
