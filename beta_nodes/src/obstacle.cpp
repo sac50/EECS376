@@ -138,7 +138,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 		  && diff(laserScan->ranges[i],laserScan->ranges[i-1])	//and not much shorter than 
 		  && diff(laserScan->ranges[i],laserScan->ranges[i+1])) //its neighboring points?
 	  {
-	  	postApproach=true;
+	  	//postApproach=true;
 		  if (!jagFlag)
 			  jagFlag = true;
 
@@ -198,6 +198,8 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	//is large or small (0-10,170-180), stopping distance may be quite short.  
 	holla = true;
 	//cout<<endl;
+	ROS_INFO("Right: %f %f",rightPoint.x, rightPoint.y);
+	ROS_INFO("Left: %f %f",leftPoint.x,leftPoint.y);
 }
 
 void holdingPattern(double time){
@@ -293,18 +295,19 @@ int main(int argc, char **argv)
 				pathSegment.seg_type = 1;
 				pub1.publish(pathSegment);
 				haveApproached=true;
-				ROS_INFO("Pubed Path %f %f %f", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55);
+				ROS_INFO("Pubed Path %f %f %f %f", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55, pathSegment.seg_type);
 			}
 			distToGo = sqrt(pow(avoidPoint.x-position.x,2)+pow(avoidPoint.y-position.y,2));
+			//ROS_INFO("%f %d %d", distToGo, haveApproached, !postApproach);
 			if(distToGo < 0.1 && haveApproached && !postApproach){
 				postApproach=true;
-				pathSegment.init_point.x = midPoint.x;
-				pathSegment.init_point.y = midPoint.y;
-				pathSegment.ref_point.x = midPoint.x + cos(path.seg_psi);
-				pathSegment.ref_point.y = midPoint.y + sin(path.seg_psi);
+				pathSegment.init_point.x = midPoint.x+position.x;
+				pathSegment.init_point.y = midPoint.y+position.y;
+				pathSegment.ref_point.x = midPoint.x+position.x + cos(path.seg_psi);
+				pathSegment.ref_point.y = midPoint.y+position.y + sin(path.seg_psi);
 				pathSegment.seg_type = 4;
 				pub1.publish(pathSegment);
-				ROS_INFO("Pubed Correction Seg %f %f", pathSegment.ref_point.x,pathSegment.ref_point.y);
+				ROS_INFO("Pubed Correction Seg %f %f %f", pathSegment.init_point.x,pathSegment.init_point.y, pathSegment.seg_type);
 			}
 			/*
 			if(postApproach){
