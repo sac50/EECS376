@@ -310,7 +310,7 @@ int main(int argc, char **argv)
 				pathSegment.seg_type = 1;
 				pub1.publish(pathSegment);
 				haveApproached=true;
-				ROS_INFO("Pubed Path %f %f %f %d", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55, pathSegment.seg_type);
+				ROS_INFO("Pubed Path %f %f %f %d", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.65, pathSegment.seg_type);
 			}
 			distToGo = sqrt(pow(avoidPoint.x-position.x,2)+pow(avoidPoint.y-position.y,2));
 			//ROS_INFO("ToGo: %f", distToGo);

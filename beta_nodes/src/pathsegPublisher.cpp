@@ -69,7 +69,7 @@ int main(int argc,char **argv)
 //	curPathSeg.seg_number=123;
 	curPathSeg.seg_type=1;
 	curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
-	ROS_INFO("Current Segment PSI: %f", curPathSeg.seg_psi);
+	//ROS_INFO("Current Segment PSI: %f", curPathSeg.seg_psi);
 //	curPathSeg.init_tan_angle=tf::createQuaternionMsgFromYaw(1.23);
 //	curPathSeg.max_speeds.linear.x=3.45;
 //	curPathSeg.max_speeds.angular.z=1.23;
@@ -93,15 +93,20 @@ int main(int argc,char **argv)
 			
 			if(inAvoid){
 				pathQueue.pop_back();
+				pathQueue.push_back(avoidancePatch);
+				avoidancePatch.seg_type=0;
 			}
 			else if(avoidancePatch.seg_type==4 && !inAvoid){
 				//yup
+				pathQueue.push_back(avoidancePatch);
 			}
 			else{
 				inAvoid=true;
+				pathQueue.push_back(avoidancePatch);
+				avoidancePatch.seg_type=0;
 			}
-			pathQueue.push_back(avoidancePatch);
-			avoidancePatch.seg_type=0;
+			
+			
 			segNum++;
 		}
 		if(segNum<0){
@@ -118,13 +123,13 @@ int main(int argc,char **argv)
 //		ROS_INFO("elapsed time is %f", elapsed_time.toSec());
 		DistToGo = sqrt(pow(curPathSeg.ref_point.x-position.x,2)+pow(curPathSeg.ref_point.y-position.y,2));
 //		curPathSeg.seg_length= elapsed_time.toSec();
-		ROS_INFO("sqrt((%2.2f- %2.2f)^2 + (%2.2f- %2.2f)^2) = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
+		//ROS_INFO("sqrt((%2.2f- %2.2f)^2 + (%2.2f- %2.2f)^2) = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
 		if(DistToGo<0.1){
 			if(needToReplan && !inAvoid){
 				needToReplan=false;
 			}
 			if(inAvoid){
-				inAvoid=false;
+				//inAvoid=false;
 				needToReplan=true;
 				//curPathSeg.seg_type = 0;
 			}
@@ -132,15 +137,18 @@ int main(int argc,char **argv)
 			segNum--;	
 		}
 		if(needToReplan){
-			if(avoidancePatch.seg_type==4){
+			if(curPathSeg.seg_type==4 && inAvoid){
+				inAvoid=false;
 				curPathSeg=pathQueue[segNum];
 				avoidancePatch.seg_type==0;
+				ROS_INFO("WTF");
 			}
-			else{
+			else if(inAvoid){
+				ROS_INFO("BAD %d", curPathSeg.seg_type);
 				curPathSeg.seg_type = 0;
 			}
 		}
-		ROS_INFO("Current: %f %f",curPathSeg.ref_point.x,curPathSeg.ref_point.y);
+		//ROS_INFO("Current: %f %f",curPathSeg.ref_point.x,curPathSeg.ref_point.y);
 		pubseg.publish(curPathSeg); // publish the path segment
 
 
