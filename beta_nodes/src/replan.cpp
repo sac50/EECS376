@@ -119,7 +119,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	int leftI=180, rightI=0;
 	Vector leftPoint,rightPoint;
 	gap tempGap;
-	gaps.clear();
+	gaps.erase(gaps.begin(),gaps.begin()+gaps.size());
 	//cout << "-=-=-=-=-=-=-= C A L L B A C K =-=-=-=-=-=-=-=-=-";
 
 	rightClearance = laserScan->ranges[CUTOFF];
@@ -172,12 +172,13 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	  		leftI = i;
 	  		leftPoint.x = laserScan->ranges[i]*cos(i*D2R);
 	  		leftPoint.y = laserScan->ranges[i]*sin(i*D2R);
-	  		if(abs(laserScan->ranges[leftI]*cos(leftI*D2R) - laserScan->ranges[rightI]*cos(rightI*D2R))> 0.6){
+	  		if(abs(leftPoint.x - rightPoint.x)> 0.6){
 	  			//Store it
 	  			midPoint.x = (leftPoint.x-rightPoint.x)/2;
 	  			midPoint.y = (leftPoint.y-rightPoint.y)/2;
 	  			tempGap.right = rightPoint;
 	  			tempGap.left = leftPoint;
+	  			ROS_INFO("%f - %f = %f",leftPoint.x, rightPoint.x, leftPoint.x - rightPoint.x);
 	  			gaps.push_back(tempGap);
 			}
 		}
@@ -281,12 +282,12 @@ int main(int argc, char **argv)
 					 //edge true, left point closest, go right
 			for(int i=0;i<gaps.size();i++){
 				if(abs(gaps[i].right.x)<graft){
-					graft = abs(gaps[i].right.x);
+					graft = gaps[i].right.x;
 					theOneToUse = i;
 					edge=false;
 				}
 				if(abs(gaps[i].left.x)<graft){
-					graft = abs(gaps[i].left.x);
+					graft = gaps[i].left.x;
 					theOneToUse = i;
 					edge=true;
 				}
@@ -296,13 +297,13 @@ int main(int argc, char **argv)
 			//If so, ignore, if not publish new seg to end at .55m away, or if it's closer, 30% away, or stop.
 			distToGo = sqrt(pow(path.end.x-position.x,2)+pow(path.end.y-position.y,2));
 			//ROS_INFO("%f",distToGo);
-			if(obstacleMsg.obstacle && distToGo > nearestObstacle-0.55 && !haveApproached){
+			if(obstacleMsg.obstacle && distToGo > nearestObstacle-0.65 && !haveApproached){
 				//Publish new path to close ish
 				//Will need to check for when an object pops in < 0.55m away
 				pathSegment.init_point.x = position.x;
 				pathSegment.init_point.y = position.y;
-				pathSegment.ref_point.x = position.x + (nearestObstacle-0.55)*cos(path.seg_psi);
-				pathSegment.ref_point.y = position.y + (nearestObstacle-0.55)*sin(path.seg_psi);
+				pathSegment.ref_point.x = position.x + (nearestObstacle-0.65)*cos(path.seg_psi);
+				pathSegment.ref_point.y = position.y + (nearestObstacle-0.65)*sin(path.seg_psi);
 				avoidPoint.x = pathSegment.ref_point.x;
 				avoidPoint.y = pathSegment.ref_point.y;
 				pathSegment.seg_psi = path.seg_psi;
@@ -312,18 +313,25 @@ int main(int argc, char **argv)
 				ROS_INFO("Pubed Path %f %f %f %d", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55, pathSegment.seg_type);
 			}
 			distToGo = sqrt(pow(avoidPoint.x-position.x,2)+pow(avoidPoint.y-position.y,2));
-			ROS_INFO("ToGo: %f", distToGo);
+			//ROS_INFO("ToGo: %f", distToGo);
 			int dir;
 			double n_psi = atan2(path.n_hat.y,path.n_hat.x);
-			if(edge){ dir=-1;}
-			else {dir=1;}
+			if(edge){ graft-=0.25;}
+			else {graft+=0.25;}
 			if(distToGo < 0.1 && haveApproached && !postApproach){
 				postApproach=true;
-				ROS_INFO("Graft: %f",graft);
-				pathSegment.init_point.x = position.x + nearestObstacle*cos(path.seg_psi) + dir*graft*cos(n_psi);
-				pathSegment.init_point.y = position.x + nearestObstacle*sin(path.seg_psi) + dir*graft*sin(n_psi);
+				ROS_INFO("Graft: %f %d 0 go left, 1 go right",graft,edge);
+				for(int i=0;i<gaps.size();i++){
+					ROS_INFO("%f %f",abs(gaps[i].right.x),abs(gaps[i].left.x));
+				}
+				pathSegment.init_point.x = position.x + 0.65*cos(path.seg_psi) + graft*path.n_hat.x;
+				pathSegment.init_point.y = position.y + 0.65*sin(path.seg_psi) + graft*path.n_hat.y;
+				ROS_INFO("%f + %f + %f",position.x, 0.65*cos(path.seg_psi), graft*path.n_hat.x);
+				ROS_INFO("%f + %f + %f",position.y, 0.65*sin(path.seg_psi), graft*path.n_hat.y);
 				pathSegment.ref_point.x = pathSegment.init_point.x;
 				pathSegment.ref_point.y = pathSegment.init_point.y;
+				avoidPoint.x = pathSegment.ref_point.x;
+				avoidPoint.y = pathSegment.ref_point.y;
 				pathSegment.seg_type = 4;
 				pub1.publish(pathSegment);
 				ROS_INFO("Pubed Correction Seg %f %f %d", pathSegment.init_point.x,pathSegment.init_point.y, pathSegment.seg_type);

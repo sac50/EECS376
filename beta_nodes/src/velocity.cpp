@@ -141,13 +141,13 @@ int main(int argc, char** argv) {
 	while (!ros::Time::isValid()) { }
 	
 	// Get Path
-	Vector t1,t2;
-	t1.x=-2.48;
-	t1.y=2.24;
-	t2.x=-0.4;
-	t2.y=0.4;
-	path.init(t1,t2,1);
-	Vector ignore = path.n_hatCalc();
+	//Vector t1,t2;
+	//t1.x=-2.48;
+	//t1.y=2.24;
+	//t2.x=-0.4;
+	//t2.y=0.4;
+	//path.init(t1,t2,1);
+	//Vector ignore = path.n_hatCalc();
 
 	while (ros::ok()) {
 		// Trigger Callbacks
