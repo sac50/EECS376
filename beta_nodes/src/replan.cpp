@@ -10,11 +10,11 @@
 #include <vector>
 
 #define CUTOFF 5 //disregard this many degrees of laser scan from the edges
-#define HZ 50.0
+#define HZ 10.0
 #define PI 3.141562653589
 #define D2R 0.0174532925 //pi/180
 #define R2D 57.2957795
-#define LISTENTOTHIS "base_laser1_scan" // "base_laser1_scan" for jinx
+#define LISTENTOTHIS "base_scan" // "base_laser1_scan" for jinx
 
 using namespace std;
 float nearestObstacle;
@@ -52,6 +52,10 @@ void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	path.end.y = pth->ref_point.y;
 	path.type = pth->seg_type;
 	path.seg_psi = pth->seg_psi;
+	path.t_hat.x = cos(path.seg_psi);
+	path.t_hat.y = sin(path.seg_psi);
+	path.n_hat.x = -(path.t_hat.y);
+	path.n_hat.y = path.t_hat.x;
 }
 
 //inDeBox tells if a point at a given theta and radial distance from the laser 
@@ -168,7 +172,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& laserScan)
 	  		leftI = i;
 	  		leftPoint.x = laserScan->ranges[i]*cos(i*D2R);
 	  		leftPoint.y = laserScan->ranges[i]*sin(i*D2R);
-	  		if(abs(laserScan->ranges[leftI]*cos(leftI*D2R)) - abs(laserScan->ranges[rightI]*cos(rightI*D2R))> 0.6){
+	  		if(abs(laserScan->ranges[leftI]*cos(leftI*D2R) - laserScan->ranges[rightI]*cos(rightI*D2R))> 0.6){
 	  			//Store it
 	  			midPoint.x = (leftPoint.x-rightPoint.x)/2;
 	  			midPoint.y = (leftPoint.y-rightPoint.y)/2;
@@ -305,19 +309,24 @@ int main(int argc, char **argv)
 				pathSegment.seg_type = 1;
 				pub1.publish(pathSegment);
 				haveApproached=true;
-				ROS_INFO("Pubed Path %f %f %f %f", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55, pathSegment.seg_type);
+				ROS_INFO("Pubed Path %f %f %f %d", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.55, pathSegment.seg_type);
 			}
 			distToGo = sqrt(pow(avoidPoint.x-position.x,2)+pow(avoidPoint.y-position.y,2));
-			//ROS_INFO("%f %d %d", distToGo, haveApproached, !postApproach);
+			ROS_INFO("ToGo: %f", distToGo);
+			int dir;
+			double n_psi = atan2(path.n_hat.y,path.n_hat.x);
+			if(edge){ dir=-1;}
+			else {dir=1;}
 			if(distToGo < 0.1 && haveApproached && !postApproach){
 				postApproach=true;
-				pathSegment.init_point.x = midPoint.x+position.x;
-				pathSegment.init_point.y = midPoint.y+position.y;
-				pathSegment.ref_point.x = midPoint.x+position.x + cos(path.seg_psi);
-				pathSegment.ref_point.y = midPoint.y+position.y + sin(path.seg_psi);
+				ROS_INFO("Graft: %f",graft);
+				pathSegment.init_point.x = position.x + nearestObstacle*cos(path.seg_psi) + dir*graft*cos(n_psi);
+				pathSegment.init_point.y = position.x + nearestObstacle*sin(path.seg_psi) + dir*graft*sin(n_psi);
+				pathSegment.ref_point.x = pathSegment.init_point.x;
+				pathSegment.ref_point.y = pathSegment.init_point.y;
 				pathSegment.seg_type = 4;
 				pub1.publish(pathSegment);
-				ROS_INFO("Pubed Correction Seg %f %f %f", pathSegment.init_point.x,pathSegment.init_point.y, pathSegment.seg_type);
+				ROS_INFO("Pubed Correction Seg %f %f %d", pathSegment.init_point.x,pathSegment.init_point.y, pathSegment.seg_type);
 			}
 
 		}

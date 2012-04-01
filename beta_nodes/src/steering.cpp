@@ -15,7 +15,7 @@
 const double pi = 3.141592;
 double d_threshold = 1.0;
 double Kd=0,K_omega=1.5,omega_sat=0.5;
-double nap = 50.0;
+double nap = 10.0;
 double dt = 1.0/nap;
 
 using namespace std;
@@ -53,6 +53,9 @@ void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	path.end.y = pth->ref_point.y;
 	path.type = pth->seg_type;
 	path.seg_psi = pth->seg_psi;
+	path.t_hat.x = cos(path.seg_psi);
+	path.t_hat.y = sin(path.seg_psi);
+	path.n_hatCalc();
 }
 
 int main(int argc,char **argv){
@@ -72,11 +75,11 @@ int main(int argc,char **argv){
 	beta_nodes::steeringMsg steeringMsg;
 	
 	Vector t1,t2;
-	t1.x=-2.48;
-	t1.y=2.24;
-	t2.x=-0.4;
-	t2.y=0.4;
-	path.init(t1,t2,1);
+	//t1.x=-2.48;
+	//t1.y=2.24;
+	//t2.x=-0.4;
+	//t2.y=0.4;
+	//path.init(t1,t2,1);
 	
 	double psidot,xdot,ydot,psi_des,psi_err,psi_robot,d,omega_cmd, time=0;
 	Vector xy;

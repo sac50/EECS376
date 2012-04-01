@@ -18,7 +18,7 @@
 #include "Path.h"
 #include <vector>
 
-#define Hz 50
+#define Hz 10
 #define LINE 1
 #define ARC 2
 #define SPIN 3
@@ -62,10 +62,10 @@ int main(int argc,char **argv)
 	//dummy population of PathSegment fields
 //	curPathSeg.curvature = 3.14;
 //	curPathSeg.seg_length=0.0;
-	curPathSeg.ref_point.x=-0.4;
-	curPathSeg.ref_point.y=0.4;
-	curPathSeg.init_point.x=-2.48;
-	curPathSeg.init_point.y=2.24;
+	curPathSeg.ref_point.x=-3.52;
+	curPathSeg.ref_point.y=20.77;
+	curPathSeg.init_point.x=5.53;
+	curPathSeg.init_point.y=11.92;
 //	curPathSeg.seg_number=123;
 	curPathSeg.seg_type=1;
 	curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
@@ -111,7 +111,7 @@ int main(int argc,char **argv)
 			curPathSeg = pathQueue[segNum];
 		}
 		if(needToReplan){
-			curPathSeg.seg_type=0;
+			//curPathSeg.seg_type=0;
 		}
 //		elapsed_time= ros::Time::now()-birthday;
 //		ROS_INFO("birthday is %f", birthday.toSec());
@@ -140,6 +140,7 @@ int main(int argc,char **argv)
 				curPathSeg.seg_type = 0;
 			}
 		}
+		ROS_INFO("Current: %f %f",curPathSeg.ref_point.x,curPathSeg.ref_point.y);
 		pubseg.publish(curPathSeg); // publish the path segment
 
 

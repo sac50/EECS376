@@ -23,7 +23,7 @@
 #define GEN = 2
 
 int priority=0;
-double HZ = 50;
+double HZ = 10;
 double dt = 1.0/HZ;
 beta_nodes::velocityMsg velocityMsg;
 Vector position;
@@ -48,7 +48,7 @@ void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 
 void velocityCallback(const beta_nodes::velocityMsg::ConstPtr& vel){
 	velocityMsg.velocity = vel->velocity;
-	ROS_INFO("Velocity: %f",vel->velocity);
+	//ROS_INFO("Velocity: %f",vel->velocity);
 }
 
 
@@ -130,6 +130,7 @@ int main(int argc, char** argv) {
 				ros::spinOnce();
 				vel_object.linear.x = velocityMsg.velocity;
 				vel_object.angular.z = omega_cmd;
+				ROS_INFO("%f",velocityMsg.velocity);
 				vel_pub.publish(vel_object);
 				vPassBack.vPast = velocityMsg.velocity;
 				vPassBack.posX = position.x;

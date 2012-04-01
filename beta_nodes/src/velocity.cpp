@@ -14,7 +14,7 @@
 
 #define HALF_PI 1.6079633
 #define CW -1.0
-#define HZ 50
+#define HZ 10
 #define CCW 1.0
 #define omega_max 1.0
 #define alpha_max 0.5
