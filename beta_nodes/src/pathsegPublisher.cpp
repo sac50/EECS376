@@ -129,22 +129,23 @@ int main(int argc,char **argv)
 				needToReplan=false;
 			}
 			if(inAvoid){
-				//inAvoid=false;
+				inAvoid=false;
 				needToReplan=true;
 				//curPathSeg.seg_type = 0;
 			}
+			ROS_INFO("Popped type: %d %d", curPathSeg.seg_type,segNum);
 			pathQueue.pop_back();
 			segNum--;	
 		}
 		if(needToReplan){
-			if(curPathSeg.seg_type==4 && inAvoid){
-				inAvoid=false;
+			if(curPathSeg.seg_type==4){
+				
 				curPathSeg=pathQueue[segNum];
 				avoidancePatch.seg_type==0;
-				ROS_INFO("WTF");
+				//ROS_INFO("WTF");
 			}
-			else if(inAvoid){
-				ROS_INFO("BAD %d", curPathSeg.seg_type);
+			else{
+				//ROS_INFO("BAD %d", curPathSeg.seg_type);
 				curPathSeg.seg_type = 0;
 			}
 		}

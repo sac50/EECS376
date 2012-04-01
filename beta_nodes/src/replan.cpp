@@ -244,6 +244,7 @@ int main(int argc, char **argv)
 	}
 	
 	holdingPattern(1);
+	bool weDidShit=false;
 
 	while(ros::ok())
 	{
@@ -300,6 +301,7 @@ int main(int argc, char **argv)
 			if(obstacleMsg.obstacle && distToGo > nearestObstacle-0.65 && !haveApproached){
 				//Publish new path to close ish
 				//Will need to check for when an object pops in < 0.55m away
+				weDidShit=true;
 				pathSegment.init_point.x = position.x;
 				pathSegment.init_point.y = position.y;
 				pathSegment.ref_point.x = position.x + (nearestObstacle-0.65)*cos(path.seg_psi);
@@ -308,7 +310,7 @@ int main(int argc, char **argv)
 				avoidPoint.y = pathSegment.ref_point.y;
 				pathSegment.seg_psi = path.seg_psi;
 				pathSegment.seg_type = 1;
-				pub1.publish(pathSegment);
+				//pub1.publish(pathSegment);
 				haveApproached=true;
 				ROS_INFO("Pubed Path %f %f %f %d", pathSegment.ref_point.x,pathSegment.ref_point.y, nearestObstacle-0.65, pathSegment.seg_type);
 			}
@@ -319,6 +321,7 @@ int main(int argc, char **argv)
 			if(edge){ graft-=0.25;}
 			else {graft+=0.25;}
 			if(distToGo < 0.1 && haveApproached && !postApproach){
+				weDidShit=true;
 				postApproach=true;
 				ROS_INFO("Graft: %f %d 0 go left, 1 go right",graft,edge);
 				for(int i=0;i<gaps.size();i++){
@@ -328,15 +331,19 @@ int main(int argc, char **argv)
 				pathSegment.init_point.y = position.y + 0.65*sin(path.seg_psi) + graft*path.n_hat.y;
 				ROS_INFO("%f + %f + %f",position.x, 0.65*cos(path.seg_psi), graft*path.n_hat.x);
 				ROS_INFO("%f + %f + %f",position.y, 0.65*sin(path.seg_psi), graft*path.n_hat.y);
-				pathSegment.ref_point.x = pathSegment.init_point.x;
-				pathSegment.ref_point.y = pathSegment.init_point.y;
+				pathSegment.ref_point.x = pathSegment.init_point.x + 0.65*cos(path.seg_psi);
+				pathSegment.ref_point.y = pathSegment.init_point.y + 0.65*sin(path.seg_psi);
 				avoidPoint.x = pathSegment.ref_point.x;
 				avoidPoint.y = pathSegment.ref_point.y;
 				pathSegment.seg_type = 4;
-				pub1.publish(pathSegment);
+				//pub1.publish(pathSegment);
 				ROS_INFO("Pubed Correction Seg %f %f %d", pathSegment.init_point.x,pathSegment.init_point.y, pathSegment.seg_type);
 			}
-
+			if(!weDidShit){
+				pathSegment.seg_type=0;
+			}
+			weDidShit=false;
+			pub1.publish(pathSegment);
 		}
 		else 
 		{
