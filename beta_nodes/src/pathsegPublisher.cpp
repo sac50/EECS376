@@ -99,6 +99,7 @@ int main(int argc,char **argv)
 			else if(avoidancePatch.seg_type==4 && !inAvoid){
 				//yup
 				pathQueue.push_back(avoidancePatch);
+				avoidancePatch.seg_type=0;
 			}
 			else{
 				inAvoid=true;
@@ -111,6 +112,7 @@ int main(int argc,char **argv)
 		}
 		if(segNum<0){
 			curPathSeg.seg_type=0;
+			segNum=-1;
 		}
 		else{
 			curPathSeg = pathQueue[segNum];
@@ -124,7 +126,7 @@ int main(int argc,char **argv)
 		DistToGo = sqrt(pow(curPathSeg.ref_point.x-position.x,2)+pow(curPathSeg.ref_point.y-position.y,2));
 //		curPathSeg.seg_length= elapsed_time.toSec();
 		//ROS_INFO("sqrt((%2.2f- %2.2f)^2 + (%2.2f- %2.2f)^2) = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
-		if(DistToGo<0.1){
+		if(DistToGo<0.1 && curPathSeg.seg_type!=0){
 			if(needToReplan && !inAvoid){
 				needToReplan=false;
 			}

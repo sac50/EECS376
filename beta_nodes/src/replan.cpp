@@ -293,6 +293,10 @@ int main(int argc, char **argv)
 					edge=true;
 				}
 			}
+			if(graft == 999){
+				r.sleep();
+				continue;
+			}
 			
 			//Check to see if nearestObstacle is farther away than the current desired end point
 			//If so, ignore, if not publish new seg to end at .55m away, or if it's closer, 30% away, or stop.
@@ -318,8 +322,8 @@ int main(int argc, char **argv)
 			//ROS_INFO("ToGo: %f", distToGo);
 			int dir;
 			double n_psi = atan2(path.n_hat.y,path.n_hat.x);
-			if(edge){ graft-=0.25;}
-			else {graft+=0.25;}
+			if(edge){ graft-=0.2;}
+			else {graft+=0.2;}
 			if(distToGo < 0.1 && haveApproached && !postApproach){
 				weDidShit=true;
 				postApproach=true;
@@ -331,8 +335,8 @@ int main(int argc, char **argv)
 				pathSegment.init_point.y = position.y + 0.65*sin(path.seg_psi) + graft*path.n_hat.y;
 				ROS_INFO("%f + %f + %f",position.x, 0.65*cos(path.seg_psi), graft*path.n_hat.x);
 				ROS_INFO("%f + %f + %f",position.y, 0.65*sin(path.seg_psi), graft*path.n_hat.y);
-				pathSegment.ref_point.x = pathSegment.init_point.x + 0.65*cos(path.seg_psi);
-				pathSegment.ref_point.y = pathSegment.init_point.y + 0.65*sin(path.seg_psi);
+				pathSegment.ref_point.x = pathSegment.init_point.x + 1.0*cos(path.seg_psi);
+				pathSegment.ref_point.y = pathSegment.init_point.y + 1.0*sin(path.seg_psi);
 				avoidPoint.x = pathSegment.ref_point.x;
 				avoidPoint.y = pathSegment.ref_point.y;
 				pathSegment.seg_type = 4;

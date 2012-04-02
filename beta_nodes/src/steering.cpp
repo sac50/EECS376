@@ -79,7 +79,7 @@ int main(int argc,char **argv){
 	//t1.y=2.24;
 	//t2.x=-0.4;
 	//t2.y=0.4;
-	//path.init(t1,t2,1);
+	path.init(path.start,path.end,0);
 	
 	double psidot,xdot,ydot,psi_des,psi_err,psi_robot,d,omega_cmd, time=0;
 	Vector xy;
@@ -108,7 +108,7 @@ int main(int argc,char **argv){
 				psi_err = psi_err-2*pi;
 			if (psi_err < -pi)
 				psi_err = psi_err+2*pi;
-		    
+			ROS_INFO("Des: %f Rob: %f Err: %f",path.seg_psi,psi_robot,psi_err);
 			//%feedback to coerce robot heading to conform to scheduled heading
 			omega_cmd = -K_omega*psi_err;  //%linear control law-> omega_cmd
 			//%limit the spin command to the legal range
@@ -136,14 +136,14 @@ int main(int argc,char **argv){
 			steeringMsg.omega_cmd = omega_cmd;
 			steeringMsg.posX = last_map_pose.pose.position.x;
 			steeringMsg.posY = last_map_pose.pose.position.y;
-			ROS_INFO("Postion: X: %f Y: %f",last_map_pose.pose.position.x, last_map_pose.pose.position.y);
+			//ROS_INFO("Postion: X: %f Y: %f",last_map_pose.pose.position.x, last_map_pose.pose.position.y);
 			pub.publish(steeringMsg);
 		}
 		else{
 			steeringMsg.omega_cmd = 0;
 			steeringMsg.posX = last_map_pose.pose.position.x;
 			steeringMsg.posY = last_map_pose.pose.position.y;
-			ROS_INFO("Postion: X: %f Y: %f",last_map_pose.pose.position.x, last_map_pose.pose.position.y);
+			//ROS_INFO("Postion: X: %f Y: %f",last_map_pose.pose.position.x, last_map_pose.pose.position.y);
 			pub.publish(steeringMsg);
 		}
 		time=time+dt;
