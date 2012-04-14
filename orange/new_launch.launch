@@ -1,0 +1,31 @@
+<launch>
+	<node pkg="orange" type="new_image_sub" name="new_image_sub" output="screen" >
+		<remap from="in_image" to="/camera/rgb/image_rect_color"/>
+		<param name="test" type="string" value="hello123" />
+		<param name="test2" type="double" value="3.141" />
+
+		<param name="loH1" type="int" value="0" />
+		<param name="loS1" type="int" value="100" />
+		<param name="loV1" type="int" value="200" />
+
+		<param name="hiH1" type="int" value="30" />
+		<param name="hiS1" type="int" value="255" />
+		<param name="hiV1" type="int" value="255" />
+
+		<param name="loH2" type="int" value="150" />
+		<param name="loS2" type="int" value="100"  />
+		<param name="loV2" type="int" value="200"  />
+
+		<param name="hiH2" type="int" value="255" />
+		<param name="hiS2" type="int" value="255" />
+		<param name="hiV2" type="int" value="255" />
+
+		<param name="K" type="double" value="-0.01"/>
+		<param name="Hz" type="int" value="20" />
+
+	</node>
+
+	<node pkg="image_view" type="image_view" name="rgb_image_viewer" output="screen">
+		<remap from="image" to="/simple_image_sub/out_image"/>
+	</node>
+</launch>

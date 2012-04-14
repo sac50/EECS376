@@ -1,0 +1,23 @@
+<launch>
+<node pkg="orange" type="image_sub_view" name="image_sub_view" output="screen">
+    <!-- remap from="image" to="camera/image_raw" /-->
+	    <remap from="image" to="/camera/rgb/image_rect_color"/>
+		</node>
+
+		<node pkg="image_view" type="image_view" name="demo_image_viewer" output="screen">
+		    <remap from="image" to="demo_image" />
+			</node>
+
+			<node pkg="image_view" type="image_view" name="demo_image2_viewer" output="screen">
+			    <remap from="image" to="demo_image2" />
+				</node>
+
+				<node pkg="image_view" type="image_view" name="demo_image3_viewer" output="screen">
+				    <remap from="image" to="demo_image3" />
+					</node>
+
+					<node pkg="image_view" type="image_view" name="demo_image5_viewer" output="screen">
+					    <remap from="image" to="demo_image5" />
+						</node>
+
+						</launch>

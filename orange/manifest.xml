@@ -1,0 +1,21 @@
+<package>
+  <description brief="orange">
+
+     orange
+
+  </description>
+  <author>jinx</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/orange</url>
+  <depend package="roscpp"/>
+  <depend package="image_transport"/>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+  <depend package="opencv2" />
+  <depend package="cv_bridge" />
+
+</package>
+
+
+
