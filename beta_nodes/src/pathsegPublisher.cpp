@@ -15,6 +15,7 @@
 #include<beta_nodes/PathSegment.h>
 #include<tf/transform_datatypes.h> //for tf::getYaw and create quaternion
 #include <beta_nodes/steeringMsg.h>
+#include <beta_nodes/orange.h>
 #include "Path.h"
 #include <vector>
 
@@ -31,6 +32,7 @@ bool needToReplan=false;
 Vector position;
 beta_nodes::PathSegment avoidancePatch;
 vector<beta_nodes::PathSegment> pathQueue;
+vector<Vector> polyLinePoints;
 
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
@@ -40,6 +42,18 @@ void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 void avoidanceCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	//ROS_INFO("%d",pth->seg_type);
 	avoidancePatch = *pth;
+}
+
+void orangeCallback(const beta_nodes::orange::ConstPtr& orange){
+	//Callback from the orange detection thingy
+	//Ideally will hand me a delightful array of points along the line, preferably atleast 10cm apart
+	//Should try to not republish points over and over, but we can handle that if need be
+	//A path will be published at large as having current position as start, the farthest out orange as end, and a heading
+	// defined by the current mini segment, this should work I think
+	//Please let the points be passed from farthest to closest, I plan on using a vector to store the points
+	// and vectors have stack like properties I hope to exploit.
+	//As noted we have a ~1m deadzone in front of the kinect where we have no data
+	// This could be an issue so we need to keep that in mind when we hit debugging
 }
 
 int main(int argc,char **argv)

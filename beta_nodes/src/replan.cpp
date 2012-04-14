@@ -322,8 +322,8 @@ int main(int argc, char **argv)
 			//ROS_INFO("ToGo: %f", distToGo);
 			int dir;
 			double n_psi = atan2(path.n_hat.y,path.n_hat.x);
-			if(edge){ graft-=0.2;}
-			else {graft+=0.2;}
+			if(edge){ graft-=0.15;}
+			else {graft+=0.15;}
 			if(distToGo < 0.1 && haveApproached && !postApproach){
 				weDidShit=true;
 				postApproach=true;
@@ -343,6 +343,11 @@ int main(int argc, char **argv)
 				//pub1.publish(pathSegment);
 				ROS_INFO("Pubed Correction Seg %f %f %d", pathSegment.init_point.x,pathSegment.init_point.y, pathSegment.seg_type);
 			}
+			//distToGo = sqrt(pow(path.end.x-position.x,2)+pow(path.end.y-position.y,2));
+			//if(distToGo < 0.15 && haveApproached && postApproach){
+			//	haveApproached = false;
+			//	postApproach = false;
+			//}
 			if(!weDidShit){
 				pathSegment.seg_type=0;
 			}
