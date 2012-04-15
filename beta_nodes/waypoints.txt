@@ -1,0 +1,13 @@
+# WAYPOINTS. 
+# comments are OK but 
+# COMMAS ARE SERIOUS so only use as appropriate.
+# format:
+# MAP-X MAP-Y MAP-HEADING
+
+8.42, 15.09, -137.16 	#start
+5.27, 11.99, -133.33 	#lab door
+5.27, 11.99, 134.99 	#after 90deg turn
+0.02, 17.14, 134.99  	#halfway down hall
+-3.25, 20.71, 137.86 	#at "T"
+-3.25, 20.71, 40.46 	#after second spin
+1.00, 24.75, 40.46 		#end

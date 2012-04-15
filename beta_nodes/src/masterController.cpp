@@ -1,3 +1,9 @@
+//node: masterController
+//inputs: "beta_estop", "cmd_corr", "velocityMsg", maybe more. Please devs check this list for accuracy upon updating.
+//outputs: "cmd_vel"
+//scope: Listens to any number of topics, gets the final word on what to do
+//maintainer: *Everyone* should know what's going on in this node
+
 #include<ros/ros.h>
 #include<cwru_base/cRIOSensors.h>
 #include<std_msgs/Bool.h>

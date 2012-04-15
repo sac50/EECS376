@@ -1,3 +1,10 @@
+//node: obstacle
+//inputs: "base_laser1_scan"
+//outputs: "obstacle"
+//scope:  Finds obstacles, publishes details, so masterController can limit velocity and stuff
+//maintainer: Charles
+
+
 #include <math.h>
 #include <ros/ros.h>
 #include <cwru_base/Pose.h>
@@ -14,7 +21,7 @@
 #define PI 3.141562653589
 #define D2R 0.0174532925 //pi/180
 #define R2D 57.2957795
-#define LISTENTOTHIS "base_laser1_scan" // "base_laser1_scan" for jinx
+#define LISTENTOTHIS "base_scan" // "base_laser1_scan" for jinx
 
 using namespace std;
 float nearestObstacle;

@@ -1,3 +1,12 @@
+//node: velocity
+//inputs: "vPast", "paths"
+//outputs: "velocityMsg"
+//scope: Given information about local speed limits from paths, and
+//inferred distance traveled, publishes how fast we could possibly go at
+//any instant, listening to vPast to see what really happened.
+//maintainer: Steve
+
+
 #include <ros/ros.h>
 #include <cwru_base/cRIOSensors.h>
 #include <std_msgs/Bool.h>
