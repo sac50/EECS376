@@ -78,7 +78,7 @@ int main(int argc,char **argv)
 	
 	ros::Publisher pub = n.advertise<beta_nodes::steeringMsg>("cmd_corr",1);
 	ros::Subscriber sub = n.subscribe<nav_msgs::Odometry>("odom", 1, odomCallback);
-	ros::Subscriber sub1 = n.subscribe("paths", 1,pathQueueCallback);
+	ros::Subscriber sub1 = n.subscribe("polySeg", 1,pathQueueCallback);
 	
 	while (!ros::Time::isValid()) {} // simulation time sometimes initializes slowly. Wait until ros::Time::now() will be valid
 	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
