@@ -1,4 +1,9 @@
 <launch>
+
+	<!-- Static transform from Jinx's base to the pan mount -->
+	<node pkg="tf" type="static_transform_publisher" name="kinect_static_tf_pub" respawn="true"
+	args="-0.00 0 1.5572 0.0 0.24434 0.0 base_link pan_link 100" />
+
 	<node pkg="orange" type="new_image_sub" name="new_image_sub" output="screen" >
 		<remap from="in_image" to="/camera/rgb/image_rect_color"/>
 		<param name="test" type="string" value="hello123" />
@@ -20,8 +25,8 @@
 		<param name="hiS2" type="int" value="255" />
 		<param name="hiV2" type="int" value="255" />
 
-		<param name="K" type="double" value="-0.005"/>
-		<param name="Hz" type="int" value="40" />
+		<param name="K" type="double" value="-0.01"/>
+		<param name="Hz" type="int" value="20" />
 
 	</node>
 

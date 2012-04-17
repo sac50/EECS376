@@ -1,9 +1,14 @@
 <launch>
-	<node name="masterController" pkg="beta_nodes" type="masterController"/>
+
+	<!-- Static transform from Jinx's base to the pan mount -->
+	<node pkg="tf" type="static_transform_publisher" name="kinect_static_tf_pub" respawn="true"
+	args="-0.00 0 1.5572 0.0 0.24434 0.0 base_link pan_link 100" />
+	<!--
+	<node name="masterController" pkg="beta_nodes" type="masterController"/> -->
 	<node name="steering" pkg="beta_nodes" type="steering"/>
-	<node name="estop" pkg="beta_nodes" type="estop"/>
+	<!-- <node name="estop" pkg="beta_nodes" type="estop"/>
 	<node name="paths" pkg="beta_nodes" type="paths"/>
-	<node name="replan" pkg="beta_nodes" type="replan"/>
-	<node name="velocity" pkg="beta_nodes" type="velocity"/>
+	<!--<node name="replan" pkg="beta_nodes" type="replan"/> 
+	<node name="velocity" pkg="beta_nodes" type="velocity"/> -->
 </launch>
 	
