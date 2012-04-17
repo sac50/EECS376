@@ -19,6 +19,7 @@
 #include <beta_nodes/orange.h>
 #include "Path.h"
 #include <vector>
+#include <deque>
 
 #define Hz 10
 #define LINE 1
@@ -34,7 +35,7 @@ Vector position;
 beta_nodes::PathSegment avoidancePatch;
 beta_nodes::PathSegment polySeg;
 vector<beta_nodes::PathSegment> pathQueue;
-vector<Vector> polyLinePoints;
+deque<Vector> polyLinePoints;
 
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
@@ -56,6 +57,10 @@ void orangeCallback(const beta_nodes::orange::ConstPtr& orange){
 	// and vectors have stack like properties I hope to exploit.
 	//As noted we have a ~1m deadzone in front of the kinect where we have no data
 	// This could be an issue so we need to keep that in mind when we hit debugging
+	Vector potato;
+	potato.x = orange->posX;
+	potato.y = orange->posY;
+	polyLinePoints.push_front(potato);
 }
 
 int main(int argc,char **argv)
@@ -79,6 +84,7 @@ int main(int argc,char **argv)
 	//dummy population of PathSegment fields
 //	curPathSeg.curvature = 3.14;
 //	curPathSeg.seg_length=0.0;
+/*
 	curPathSeg.ref_point.x=-3.52;
 	curPathSeg.ref_point.y=20.77;
 	curPathSeg.init_point.x=5.53;
@@ -103,7 +109,10 @@ int main(int argc,char **argv)
 	point.x = 0.46;
 	point.y = 16.31;
 	polyLinePoints.push_back(point);
+	*/
 	
+	// SEE THE BLUE SHIT ABOVE
+	// We ignore that now, but I hate deleting things so it stays for now please
 
 	double DistToGo;
 
@@ -117,8 +126,14 @@ int main(int argc,char **argv)
 		//avoidancePatch.ref_point.y = avoidancePatch.init_point.y + sin(curPathSeg.seg_psi);
 		//avoidancePatch.seg_psi = curPathSeg.seg_psi;
 		if(pathQueue.size()>0){
-			curPathSeg = pathQueue.back();
+			//curPathSeg = pathQueue.back();  This is wrong
 			if(polyLinePoints.size()>0){
+				curPathSeg.ref_point.x = polyLinePoints[0].x;
+				curPathSeg.ref_point.y = polyLinePoints[0].y;
+				curPathSeg.init_point.x = position.x;
+				curPathSeg.init_point.y = position.y;
+				curPathSeg.seg_type = 1;
+				curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
 				polySeg.ref_point.x = polyLinePoints.back().x;
 				polySeg.ref_point.y = polyLinePoints.back().y;
 				polySeg.init_point.x = position.x;
@@ -127,7 +142,8 @@ int main(int argc,char **argv)
 				polySeg.seg_psi = atan2((polySeg.ref_point.y-polySeg.init_point.y),(polySeg.ref_point.x-polySeg.init_point.x));
 			}
 			else{
-				polySeg = curPathSeg;
+				polySeg.seg_type=0;
+				curPathSeg.seg_type=0;
 			}
 		}
 		else{
