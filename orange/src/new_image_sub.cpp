@@ -11,6 +11,8 @@
 
 #include<geometry_msgs/Twist.h> //data type for velocities
 
+#include <iostream>
+
 //using std::string, cv ;
 using namespace cv;
 using std::string;
@@ -73,14 +75,20 @@ void imageCB(const sensor_msgs::ImageConstPtr& image_msg)
 	//cv::imshow("RANGE", range);
 
 	cv::erode(range, eroded, Mat());
-	//cv::imshow("ERODED", eroded);
+	cv::imshow("ERODED", eroded);
 
 	double x = 0.0;
 	double y = 0.0;
 	double counter = 0.0;
-	for (int i = 0; i < eroded.rows; i++) {
-		for (int j = 0; j < eroded.cols; j++) {
+	for (int i = 0; i < eroded.rows; i+=10) {
+		for (int j = 0; j < eroded.cols; j+=10) {
+			std::cout << "(" 
+				 << eroded.at<cv::Vec3b>(i,j)[0] << ","
+				 << eroded.at<cv::Vec3b>(i,j)[1] << ","
+				 << eroded.at<cv::Vec3b>(i,j)[2] << ")";
+				
 			if (eroded.at<cv::Vec3b>(i,j)[0] == 255 && eroded.at<cv::Vec3b>(i,j)[1] == 255) {
+				// kinect reference frame points
 				//ROS_INFO("(%d,%d)", i, j);
 				//std::cout << "(" << i << "," << j << + ")" << std::endl;
 				x+=i;
@@ -97,7 +105,7 @@ void imageCB(const sensor_msgs::ImageConstPtr& image_msg)
 	if (abs(clusterOffset) > 200) clusterOffset = 0; //boundary condition
 	ROS_INFO("CENTER: (%d, %d)", xFinal, yFinal);
 	ROS_INFO("FRAME (%d x %d): Offset %d", eroded.rows, eroded.cols, clusterOffset);
-			
+				
 	cvWaitKey(5);
 	
 	// Publish the updated image
@@ -145,7 +153,7 @@ int main (int argc, char** argv)
 	lastClusterOffset = clusterOffset;
 	ros::Rate naptime(Hz); 
 	
-	// Subscribe to an image. Note the use of image_transport::Subscriber instead of ros::Subscriber
+	4// Subscribe to an image. Note the use of image_transport::Subscriber instead of ros::Subscriber
 	image_transport::Subscriber image_sub = it.subscribe("in_image", 1, boost::bind(&imageCB, _1) );
 	
 	// publisher for the output image, again using image_transport
@@ -163,6 +171,7 @@ int main (int argc, char** argv)
 		ros::spinOnce();
 		if (lastClusterOffset != clusterOffset)
 		{
+				//heres the magic:
 			cmd_vel.angular.z = K*((lastClusterOffset+clusterOffset)/2);
 			ROS_INFO("Z: %f",  cmd_vel.angular.z);
 

@@ -50,6 +50,8 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& odom)
 		{
 		  ROS_ERROR("%s", ex.what());
 		}
+		
+		
 }
 
 void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth)
@@ -83,6 +85,7 @@ int main(int argc,char **argv)
 	while (!ros::Time::isValid()) {} // simulation time sometimes initializes slowly. Wait until ros::Time::now() will be valid
 	ros::Time birthday= ros::Time::now(); // get the current time, which defines our start time, called "birthday"
 	while (!tfl->canTransform("map", "odom", ros::Time::now())) {ros::spinOnce();}
+	while (!tfl->canTransform("base_link", "pan_link", ros::Time::now())) {ROS_INFO("NO"); ros::spinOnce();}
 	ROS_INFO("birthday started as %f", birthday.toSec());
 	ros::Rate naptime(nap);
 	

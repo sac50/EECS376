@@ -19,7 +19,6 @@
 #include <beta_nodes/orange.h>
 #include "Path.h"
 #include <vector>
-#include <deque>
 
 #define Hz 10
 #define LINE 1
@@ -35,7 +34,7 @@ Vector position;
 beta_nodes::PathSegment avoidancePatch;
 beta_nodes::PathSegment polySeg;
 vector<beta_nodes::PathSegment> pathQueue;
-deque<Vector> polyLinePoints;
+vector<Vector> polyLinePoints;
 
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
@@ -57,10 +56,6 @@ void orangeCallback(const beta_nodes::orange::ConstPtr& orange){
 	// and vectors have stack like properties I hope to exploit.
 	//As noted we have a ~1m deadzone in front of the kinect where we have no data
 	// This could be an issue so we need to keep that in mind when we hit debugging
-	Vector potato;
-	potato.x = orange->posX;
-	potato.y = orange->posY;
-	polyLinePoints.push_front(potato);
 }
 
 int main(int argc,char **argv)
@@ -71,6 +66,7 @@ int main(int argc,char **argv)
 	ros::Publisher pubPoly = n.advertise<beta_nodes::PathSegment>("polySeg",1);
 	ros::Subscriber sub = n.subscribe("cmd_corr",1,steeringCallback);
 	ros::Subscriber sub1 = n.subscribe("replanning",1,avoidanceCallback);
+	//ros::Subscriber cloud_sub = n.subscribe("tapePath",1,tapePathCallback);
 
 	ros::Duration elapsed_time; // define a variable to hold elapsed time
 	ros::Rate naptime(Hz); //will perform sleeps to enforce loop rate of "10" Hz
@@ -84,11 +80,10 @@ int main(int argc,char **argv)
 	//dummy population of PathSegment fields
 //	curPathSeg.curvature = 3.14;
 //	curPathSeg.seg_length=0.0;
-/*
-	curPathSeg.ref_point.x=-3.52;
-	curPathSeg.ref_point.y=20.77;
-	curPathSeg.init_point.x=5.53;
-	curPathSeg.init_point.y=11.92;
+	curPathSeg.ref_point.x=-0.9; //the end of the major path
+	curPathSeg.ref_point.y=3.3;
+	curPathSeg.init_point.x=-1.6; // the start of the major path (was 5.53, 11.92)
+	curPathSeg.init_point.y=2.3;
 //	curPathSeg.seg_number=123;
 	curPathSeg.seg_type=1;
 	curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
@@ -100,19 +95,33 @@ int main(int argc,char **argv)
 //	curPathSeg.decel_limit=5.67;
 	pathQueue.push_back(curPathSeg);
 	Vector point;
-	point.x = -3.52;
-	point.y = 20.77;
+	point.x=-1.500000; point.y=2.300000;
 	polyLinePoints.push_back(point);
-	point.x = -1.54;
-	point.y = 19.26;
+	point.x=-1.500000; point.y=2.400000;
 	polyLinePoints.push_back(point);
-	point.x = 0.46;
-	point.y = 16.31;
+	point.x=-1.500000; point.y=2.500000;
 	polyLinePoints.push_back(point);
-	*/
+	point.x=-1.400000; point.y=2.600000;
+	polyLinePoints.push_back(point);
+	point.x=-1.400000; point.y=2.700000;
+	polyLinePoints.push_back(point);
+	point.x=-1.300000; point.y=2.700000;
+	polyLinePoints.push_back(point);
+	point.x=-1.300000; point.y=2.800000;
+	polyLinePoints.push_back(point);
+	point.x=-1.200000; point.y=2.900000;
+	polyLinePoints.push_back(point);
+	point.x=-1.200000; point.y=3.000000;
+	polyLinePoints.push_back(point);
+	point.x=-1.100000; point.y=3.000000;
+	polyLinePoints.push_back(point);
+	point.x=-1.100000; point.y=3.100000;
+	polyLinePoints.push_back(point);
+	point.x=-1.000000; point.y=3.300000;
+	polyLinePoints.push_back(point);
+	point.x=-0.900000; point.y=3.400000;
+	polyLinePoints.push_back(point);
 	
-	// SEE THE BLUE SHIT ABOVE
-	// We ignore that now, but I hate deleting things so it stays for now please
 
 	double DistToGo;
 
@@ -126,14 +135,8 @@ int main(int argc,char **argv)
 		//avoidancePatch.ref_point.y = avoidancePatch.init_point.y + sin(curPathSeg.seg_psi);
 		//avoidancePatch.seg_psi = curPathSeg.seg_psi;
 		if(pathQueue.size()>0){
-			//curPathSeg = pathQueue.back();  This is wrong
+			curPathSeg = pathQueue.back();
 			if(polyLinePoints.size()>0){
-				curPathSeg.ref_point.x = polyLinePoints[0].x;
-				curPathSeg.ref_point.y = polyLinePoints[0].y;
-				curPathSeg.init_point.x = position.x;
-				curPathSeg.init_point.y = position.y;
-				curPathSeg.seg_type = 1;
-				curPathSeg.seg_psi = atan2((curPathSeg.ref_point.y-curPathSeg.init_point.y),(curPathSeg.ref_point.x-curPathSeg.init_point.x));
 				polySeg.ref_point.x = polyLinePoints.back().x;
 				polySeg.ref_point.y = polyLinePoints.back().y;
 				polySeg.init_point.x = position.x;
@@ -142,8 +145,7 @@ int main(int argc,char **argv)
 				polySeg.seg_psi = atan2((polySeg.ref_point.y-polySeg.init_point.y),(polySeg.ref_point.x-polySeg.init_point.x));
 			}
 			else{
-				polySeg.seg_type=0;
-				curPathSeg.seg_type=0;
+				polySeg = curPathSeg;
 			}
 		}
 		else{
