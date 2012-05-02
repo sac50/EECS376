@@ -1,11 +1,3 @@
-//node: estop
-//inputs: "motors_enabled"
-//outputs: "beta_estop"
-//scope: The beta_estop message will contain a true value whenever the estop is enabled
-//		 ... It was just less confusing this way. And this here is good skeleton code.
-//maintainer: Kan Jia
-
-
 #include<ros/ros.h>
 #include<cwru_base/cRIOSensors.h>
 #include<std_msgs/Bool.h>
@@ -16,7 +8,7 @@
 
 bool estop;
 
-#define HZ 10
+#define HZ 50
 
 //estop call back, check if the robot is e-stoped and store boolean value in the variable "estop"
 void estopCallback(const std_msgs::Bool::ConstPtr& est)

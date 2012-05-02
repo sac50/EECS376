@@ -13,15 +13,17 @@
 //like when stopped in front of obstacles
 #include<ros/ros.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
+#include<geometry_msgs/PointStamped.h>
 #include<beta_nodes/PathSegment.h>
 #include<tf/transform_datatypes.h> //for tf::getYaw and create quaternion
 #include <beta_nodes/steeringMsg.h>
-#include <beta_nodes/orange.h>
+#include <beta_nodes/freeSpace.h>
+#include <math.h>
 #include "Path.h"
 #include <vector>
 #include <deque>
 
-#define Hz 10
+#define Hz 50
 #define LINE 1
 #define ARC 2
 #define SPIN 3
@@ -32,6 +34,7 @@ bool inAvoid=false;
 bool needToReplan=false;
 
 Vector position;
+Vector last_potato;
 beta_nodes::PathSegment avoidancePatch;
 beta_nodes::PathSegment polySeg;
 vector<beta_nodes::PathSegment> pathQueue;
@@ -47,7 +50,31 @@ void avoidanceCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	avoidancePatch = *pth;
 }
 
-void orangeCallback(const beta_nodes::orange::ConstPtr& orange){
+double diff(Vector one, Vector two){
+	return sqrt(pow(one.x-two.x,2)+pow(one.y-two.y,2));
+}
+
+void orangeCallback(const beta_nodes::freeSpace::ConstPtr& orange) {
+	bool obstacleFound = orange->obstacleFound;
+	geometry_msgs::PointStamped point = orange->point;
+
+	Vector potato;
+
+	potato.x = point.point.x;
+	potato.y = point.point.y;
+	if (polyLinePoints.size() == 0) {
+		polyLinePoints.push_front(potato);
+		ROS_INFO("Point Taken:  x: %f y: %f", potato.x, potato.y);
+		last_potato = potato;
+	}
+	else if (diff(last_potato, potato)>0.1) {
+		polyLinePoints.push_front(potato);
+		ROS_INFO("Point Taken: x: %f y: %f", potato.x, potato.y);
+		last_potato = potato;
+	}
+}
+/*
+void orangeCallback(const geometry_msgs::PointStamped::ConstPtr& orange){
 	//Callback from the orange detection thingy
 	//Ideally will hand me a delightful array of points along the line, preferably atleast 10cm apart
 	//Should try to not republish points over and over, but we can handle that if need be
@@ -58,10 +85,22 @@ void orangeCallback(const beta_nodes::orange::ConstPtr& orange){
 	//As noted we have a ~1m deadzone in front of the kinect where we have no data
 	// This could be an issue so we need to keep that in mind when we hit debugging
 	Vector potato;
-	potato.x = orange->posX;
-	potato.y = orange->posY;
-	polyLinePoints.push_front(potato);
+	potato.x = orange->point.x;
+	potato.y = orange->point.y;
+	if(polyLinePoints.size()==0){
+		polyLinePoints.push_front(potato);
+		ROS_INFO("Point taken:  x: %f y: %f",potato.x,potato.y);
+		last_potato = potato;
+	}
+	else if(diff(last_potato, potato)>0.1){
+		polyLinePoints.push_front(potato);
+		ROS_INFO("Point taken:  x: %f y: %f",potato.x,potato.y);
+		last_potato = potato;
+	}
+	//last_potato = potato;
 }
+*/
+
 
 int main(int argc,char **argv)
 {
@@ -71,6 +110,9 @@ int main(int argc,char **argv)
 	ros::Publisher pubPoly = n.advertise<beta_nodes::PathSegment>("polySeg",1);
 	ros::Subscriber sub = n.subscribe("cmd_corr",1,steeringCallback);
 	ros::Subscriber sub1 = n.subscribe("replanning",1,avoidanceCallback);
+	ros::Subscriber sub2 = n.subscribe("tapePoint",1,orangeCallback);
+	//last_potato.x=999;
+	//last_potato.y=999;
 
 	ros::Duration elapsed_time; // define a variable to hold elapsed time
 	ros::Rate naptime(Hz); //will perform sleeps to enforce loop rate of "10" Hz
@@ -125,9 +167,10 @@ int main(int argc,char **argv)
 		//avoidancePatch.ref_point.x = avoidancePatch.init_point.x + cos(curPathSeg.seg_psi);
 		//avoidancePatch.ref_point.y = avoidancePatch.init_point.y + sin(curPathSeg.seg_psi);
 		//avoidancePatch.seg_psi = curPathSeg.seg_psi;
-		if(pathQueue.size()>0){
+		if(true){//pathQueue.size()>0){
 			//curPathSeg = pathQueue.back();  This is wrong
 			if(polyLinePoints.size()>0){
+				//ROS_INFO("We see a point in the queue");
 				curPathSeg.ref_point.x = polyLinePoints[0].x;
 				curPathSeg.ref_point.y = polyLinePoints[0].y;
 				curPathSeg.init_point.x = position.x;
@@ -156,10 +199,11 @@ int main(int argc,char **argv)
 		if(DistToGo<0.1 && curPathSeg.seg_type!=0){
 			ROS_INFO("Popped type: %d %d", curPathSeg.seg_type,segNum);
 			if(polyLinePoints.size()>0){
+				//last_potato = polyLinePoints.back();
 				polyLinePoints.pop_back();
 			}
 			if(polyLinePoints.size()==0){
-				pathQueue.pop_back();
+				//pathQueue.pop_back();
 				curPathSeg.seg_type=0;			
 			}
 				

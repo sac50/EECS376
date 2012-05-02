@@ -1,12 +1,3 @@
-//node: velocity
-//inputs: "vPast", "paths"
-//outputs: "velocityMsg"
-//scope: Given information about local speed limits from paths, and
-//inferred distance traveled, publishes how fast we could possibly go at
-//any instant, listening to vPast to see what really happened.
-//maintainer: Steve
-
-
 #include <ros/ros.h>
 #include <cwru_base/cRIOSensors.h>
 #include <std_msgs/Bool.h>
@@ -23,7 +14,7 @@
 
 #define HALF_PI 1.6079633
 #define CW -1.0
-#define HZ 10
+#define HZ 50
 #define CCW 1.0
 #define omega_max 1.0
 #define alpha_max 0.5
@@ -31,8 +22,8 @@
 #define SPIN_IN_PLACE 2
 #define ARC_PATH 3
 
-double velocityMax = 0.50;  // Default Speedlimit.  Should be set by path class
-double accelerationMax = 0.25; //  Default Acceleration.  Should be set by the path class
+double velocityMax = 0.15;  // Default Speedlimit.  Should be set by path class
+double accelerationMax = 0.15; //  Default Acceleration.  Should be set by the path class
 double segmentDistanceLeft = 0.0;
 bool braking=false;
 double time1 = 0.0;

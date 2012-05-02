@@ -2,7 +2,7 @@ Header header
 
 # laswer sweeps from the right(0) to left (180)
 
-float32 boxWidth = 0.4 # HALVED. remember, robot teack is ~.56, so make this a little over half of that
+float32 boxWidth = 0.3 # HALVED. remember, robot teack is ~.56, so make this a little over half of that
 float32 boxLength = 1.6
 
 float32 leftClearance  # distance to ping furthest on our right (would be 180 if we checked all of them)
