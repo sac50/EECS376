@@ -1,0 +1,45 @@
+<launch>
+
+	<!-- Setup the debugging prefix.  If you set default to "true" this will make the node run under gdb, which is useful for debugging. -->
+	<arg name="debug" default="false"/>
+	<arg if="$(arg debug)" name="launch_prefix" value="gdb -ex run -args"/>
+	<arg unless="$(arg debug)" name="launch_prefix" value=""/>
+
+	<!--
+	<node pkg="tf" type="static_transform_publisher" name="kinect_static_tf_pub" respawn="true"
+	 args="0.05 0 1.5572 0.017453 0.1047198 -0.017453 base_link camera_link 100" />
+	-->			
+	<node pkg="beta_nodes" type="goal_zone" name="goal_zone"
+	    	output="screen" launch-prefix="$(arg launch_prefix)">
+							
+		<remap from="in_image"    to="/camera/rgb/image_rect_color"   />
+		<remap from="in_cam_info" to="/camera/rgb/camera_info"        />
+		<remap from="in_cloud"    to="/camera/depth_registered/points"/>
+			
+	<param name="test"  type="string" value="hello123"/>
+	<param name="test2" type="double" value="3.141"   />
+	 
+	<param name="loH1" type="int" value="0" />
+	<param name="loS1" type="int" value="100" />
+	<param name="loV1" type="int" value="200" />
+	
+	<param name="hiH1" type="int" value="30" />
+	<param name="hiS1" type="int" value="255" />
+	<param name="hiV1" type="int" value="255" />
+	 
+	<param name="loH2" type="int" value="150" />
+	<param name="loS2" type="int" value="100"  />
+	<param name="loV2" type="int" value="200"  />
+
+	<param name="hiH2" type="int" value="255" />
+	<param name="hiS2" type="int" value="255" />
+	<param name="hiV2" type="int" value="255" />
+
+	<param name="K" type="double" value="-0.005"/>
+	<param name="Hz" type="int" value="40" />
+	
+</node>
+
+	
+
+</launch>

@@ -1,0 +1,15 @@
+digraph G {
+"/odom" -> "/base_link"[label="Broadcaster: /odom_translator\nAverage rate: 50.205 Hz\nMost recent transform: 0.011 sec old \nBuffer length: 4.940 sec\n"];
+"/map" -> "/odom"[label="Broadcaster: /amcl\nAverage rate: 75.098 Hz\nMost recent transform: -0.078 sec old \nBuffer length: 4.967 sec\n"];
+"/camera_rgb_frame" -> "/camera_rgb_optical_frame"[label="Broadcaster: /camera_base_link3\nAverage rate: 10.192 Hz\nMost recent transform: -0.062 sec old \nBuffer length: 4.906 sec\n"];
+"/camera_link" -> "/camera_rgb_frame"[label="Broadcaster: /camera_base_link1\nAverage rate: 10.192 Hz\nMost recent transform: -0.085 sec old \nBuffer length: 4.906 sec\n"];
+"/camera_depth_frame" -> "/camera_depth_optical_frame"[label="Broadcaster: /camera_base_link2\nAverage rate: 10.192 Hz\nMost recent transform: -0.085 sec old \nBuffer length: 4.906 sec\n"];
+"/camera_link" -> "/camera_depth_frame"[label="Broadcaster: /camera_base_link\nAverage rate: 10.196 Hz\nMost recent transform: -0.019 sec old \nBuffer length: 4.806 sec\n"];
+"/base_link" -> "/front_sonar"[label="Broadcaster: /front_sonar_broadcaster\nAverage rate: 10.192 Hz\nMost recent transform: -0.086 sec old \nBuffer length: 4.906 sec\n"];
+"/base_link" -> "/camera_link"[label="Broadcaster: /kinect_static_tf_pub\nAverage rate: 10.197 Hz\nMost recent transform: -0.021 sec old \nBuffer length: 4.805 sec\n"];
+"/base_link" -> "/base_laser1_link"[label="Broadcaster: /base_laser1_broadcaster\nAverage rate: 10.193 Hz\nMost recent transform: -0.094 sec old \nBuffer length: 4.905 sec\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1262341325.684"[ shape=plaintext ] ;
+ }->"/map";
+}

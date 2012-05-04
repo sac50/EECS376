@@ -1,0 +1,26 @@
+<package>
+  <description brief="beta_nodes">
+
+     beta_nodes
+
+  </description>
+  <author>Albireo</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/beta_nodes</url>
+  <depend package="roscpp"/>
+  <depend package="cwru_base"/>
+  <depend package="image_transport" />
+  <depend package="sensor_msgs" />
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="pcl" />
+  <depend package="costmap_2d"/>
+  <depend package="base_local_planner"/>
+  <depend package="actionlib"/>
+  <depend package="move_base_msgs" />
+  <depend package="phidgets" />
+  <depend package="navfn" />
+</package>
+
+

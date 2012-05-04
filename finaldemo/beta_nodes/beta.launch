@@ -1,0 +1,16 @@
+<launch>
+<!--	<node pkg="tf" type="static_transform_publisher" name="kinect_static_tf_pub" respawn="true"
+		args="0.15 0 1.16 0.05 0.9 0.03 base_link camera_link 100" /--> 
+
+   <!--		args="0.0 0.0 1.125 0.0 .88 0.0 base_link camera_link 100" /> -->
+	<!-- "0.15 0 1.16 0.05 0.9 0.03" -->
+	<node name="masterController" pkg="beta_nodes" type="masterController"/> 
+	<node name="steering" pkg="beta_nodes" type="steering"/> 
+
+	<node name="estop" pkg="beta_nodes" type="estop"/>
+<!--	<node name="paths" pkg="beta_nodes" type="paths"/> -->
+	<node name="replan" pkg="beta_nodes" type="replan"/>
+	<node name="velocity" pkg="beta_nodes" type="velocity"/>
+
+</launch>
+	

@@ -1,0 +1,24 @@
+<!-- This file should start up all sensors and do anything that might need to load calibration before mapping/planning turn on -->
+<launch>
+
+	<!-- Startup the base and sensors (no_tele) -->
+	<include file="$(find cwru_base)/start_base.launch" />
+
+	<!-- Launch AMCL and map server (navs) -->
+	<include file="$(find cwru_nav)/start_amcl_2ndfloor.launch" />
+
+	<!-- Bring up kinect (kinect) -->
+	<include file="$(find beta_nodes)/bringup_kinect.launch" />
+
+	<!-- Start tried and true beta nodes (beta) -->
+	<include file="$(find beta_nodes)/beta.launch" />
+
+	<!-- Launch the current demo! (demo) -->
+	<!-- <include file="$(find beta_nodes)/demo.launch" / --> 
+
+	<!-- rosrun beta_nodes paths
+		obstacleZone.launch
+		orangeGoal.launch
+		rosrun phidgets interface_kit
+	-->
+</launch>

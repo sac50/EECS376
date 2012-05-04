@@ -1,0 +1,22 @@
+(cl:in-package beta_nodes-msg)
+(cl:export '(HEADER-VAL
+          HEADER
+          LEFTCLEARANCE-VAL
+          LEFTCLEARANCE
+          RIGHTCLEARANCE-VAL
+          RIGHTCLEARANCE
+          NEARESTOBSTACLE-VAL
+          NEARESTOBSTACLE
+          NEARESTTHETA-VAL
+          NEARESTTHETA
+          EDGEDISTANCE-VAL
+          EDGEDISTANCE
+          EDGETHETA-VAL
+          EDGETHETA
+          FIRSTOBSTACLETHETA-VAL
+          FIRSTOBSTACLETHETA
+          LASTOBSTACLETHETA-VAL
+          LASTOBSTACLETHETA
+          OBSTACLE-VAL
+          OBSTACLE
+))

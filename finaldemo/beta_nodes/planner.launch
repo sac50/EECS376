@@ -1,0 +1,5 @@
+<launch>
+	<node name="goals" pkg="beta_nodes" type="goals" >
+	
+	</node>
+</launch>
