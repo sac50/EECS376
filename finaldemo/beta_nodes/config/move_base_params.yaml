@@ -1,0 +1,4 @@
+controller_frequency: 40.0
+oscillation_distance: 0.5
+planner_frequency: 20.0
+

@@ -1,0 +1,6 @@
+allow_unknown: true
+planner_window_x: 12.0
+planner_window_y: 12.0
+default_tolerance: 0.1
+visualize_potential: true
+

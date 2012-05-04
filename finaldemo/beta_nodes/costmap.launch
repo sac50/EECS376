@@ -1,0 +1,17 @@
+<launch>
+	<node name="costmap" pkg="beta_nodes" type="costmap" >
+		<rosparam file="$(find beta_nodes)/config/costmap_params.yaml" command="load" ns="costmap" />
+		<rosparam file="$(find beta_nodes)/config/costmap_global_params.yaml" command="load" ns="costmap" />
+		<rosparam file="$(find beta_nodes)/config/planner_params.yaml" command="load" ns="costmap" />
+		<rosparam file="$(find beta_nodes)/config/global_planner_params.yaml" command="load" ns="costmap" />
+	</node>
+	
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+		<!-- <param name="controller_frequency" type="double" value="3.0" /> -->
+		<!-- <rosparam file="$(find beta_nodes)/config/move_base_params.yaml" command="load" ns="move_base" /> -->
+		<rosparam file="$(find beta_nodes)/config/costmap_params.yaml" command="load" ns="local_costmap" />
+		<rosparam file="$(find beta_nodes)/config/costmap_global_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find beta_nodes)/config/planner_params.yaml" command="load" />
+		<rosparam file="$(find beta_nodes)/config/global_planner_params.yaml" command="load" />
+	</node>
+</launch>

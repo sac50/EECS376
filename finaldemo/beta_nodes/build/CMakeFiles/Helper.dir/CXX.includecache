@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/Path.h
+
+/home/jinx/ROSCode/beta_nodes/src/Path.cpp
+math.h
+-
+Path.h
+/home/jinx/ROSCode/beta_nodes/src/Path.h
+
