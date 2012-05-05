@@ -8,29 +8,34 @@
 #include<tf/transform_datatypes.h> // for tf::getYaw
 #include<tf/transform_listener.h>
 #include<geometry_msgs/Twist.h> //data type for velocities
-#include "Path.h"
+#include "Path.h" //Our helper library
 #include <beta_nodes/steeringMsg.h>
 #include <beta_nodes/PathSegment.h>
 
+//Global values used throughout the steering algorithm
 const double pi = 3.141592;
+//Threshold distance from which to make perpendicular approach to path
 double d_threshold = 1.0;
 // omega = 1.5 omega sat 0.5
 double Kd=0,K_omega=1.5,omega_sat=0.5;
+//Update frequency
 double nap = 50.0;
 double dt = 1.0/nap;
 
 using namespace std;
 
+//Variables to track most recent odometry and map pose
 nav_msgs::Odometry last_odom;
 geometry_msgs::PoseStamped last_map_pose;
 //geometry_msgs::PoseStamped old_map_pose;
 tf::TransformListener *tfl;
 Path path;
-Vector ignore = path.n_hatCalc();
+//Vector ignore = path.n_hatCalc(); Used only during some testing
 geometry_msgs::PoseStamped temp;
 
 
-
+//Odometry Callback
+//Gets the robots current map position for use in steering calculations
 void odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
 	//old_map_pose=last_map_pose;
 		//ROS_INFO_STREAM("ODOM CALLBACK");
@@ -48,6 +53,8 @@ void odomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
         }
 }
 
+//Path Callback
+//Gets the current path segment and initializes values used only during steering calculations
 void pathQueueCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	if(pth->seg_type == 0){
 		path.type = 0;
@@ -92,6 +99,7 @@ int main(int argc,char **argv){
 	double psidot,xdot,ydot,psi_des,psi_err,psi_robot,d,omega_cmd, time=0;
 	Vector xy;
 	
+	//Steering algorithm loop
 	while (ros::ok()){
 		ros::spinOnce();
 		if(path.type != 0){

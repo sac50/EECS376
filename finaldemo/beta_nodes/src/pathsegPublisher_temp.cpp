@@ -43,16 +43,22 @@ vector<beta_nodes::PathSegment> pathQueue;
 deque<Vector> polyLinePoints;
 geometry_msgs::Point mp;	//markerpoint;
 
+//Steering Callback
+//Just gets robot position from steering node
 void steeringCallback(const beta_nodes::steeringMsg::ConstPtr& str){
 	position.x = str->posX;
 	position.y = str->posY;
 }
 
+//Deprecated Callback for object avoidance
+//Used to be used to notify this node that we are attempting a work around to avoid an object
+//Avoidance paths had a type value of 4 to indicate what they were
 void avoidanceCallback(const beta_nodes::PathSegment::ConstPtr& pth){
 	//ROS_INFO("%d",pth->seg_type);
 	avoidancePatch = *pth;
 }
 
+//Helper method, calculates linear distance between two points
 double diff(Vector one, Vector two){
 	return sqrt(pow(one.x-two.x,2)+pow(one.y-two.y,2));
 }
@@ -182,7 +188,7 @@ int main(int argc,char **argv)
 //	curPathSeg.accel_limit=4.56;
 //	curPathSeg.decel_limit=5.67;
 	pathQueue.push_back(curPathSeg);
-	/*
+	/*  Some waypoints used during testing
 	Vector point;
 	point.x = -3.52;
 	point.y = 20.77;
@@ -195,7 +201,7 @@ int main(int argc,char **argv)
 	polyLinePoints.push_back(point);
 	*/
 	
-	// SEE THE BLUE SHIT ABOVE
+	// SEE THE BLUE STUFF ABOVE
 	// We ignore that now, but I hate deleting things so it stays for now please
 
 	double DistToGo;
@@ -204,6 +210,7 @@ int main(int argc,char **argv)
 	{
 		ros::spinOnce();
 		
+		//avoidancePatch was used in an older form of our obstacle avoidance, no longer used
 		//avoidancePatch.init_point.x += position.x;
 		//avoidancePatch.init_point.y += position.y;
 		//avoidancePatch.ref_point.x = avoidancePatch.init_point.x + cos(curPathSeg.seg_psi);
@@ -211,6 +218,7 @@ int main(int argc,char **argv)
 		//avoidancePatch.seg_psi = curPathSeg.seg_psi;
 		if(true){//pathQueue.size()>0){
 			//curPathSeg = pathQueue.back();  This is wrong
+			//If we have a poly line point on the curren segment to go to...
 			if(polyLinePoints.size()>0){
 				//ROS_INFO("We see a point in the queue");
 				curPathSeg.ref_point.x = polyLinePoints[0].x;
@@ -227,6 +235,7 @@ int main(int argc,char **argv)
 				polySeg.seg_psi = atan2((polySeg.ref_point.y-polySeg.init_point.y),(polySeg.ref_point.x-polySeg.init_point.x));
 				ROS_INFO_STREAM("PUBLISH A");
 			}
+			//Else, do we have any path segments to go to...
 			else if (pathQueue.size() > 0) {
 				curPathSeg = pathQueue.front();
 				polySeg.ref_point.x = curPathSeg.ref_point.x; 
@@ -237,6 +246,7 @@ int main(int argc,char **argv)
 				polySeg.seg_psi = atan2((polySeg.ref_point.y-polySeg.init_point.y),(polySeg.ref_point.x-polySeg.init_point.x));
 				ROS_INFO_STREAM("PUBLISH B");
 			}
+			//Else, we have no where else we need to go, don't go anywhere
 			else{
 				ROS_INFO_STREAM("PUBLISH C");
 				polySeg.seg_type=0;
@@ -250,18 +260,16 @@ int main(int argc,char **argv)
 		DistToGo = sqrt(pow(polySeg.ref_point.x-position.x,2)+pow(polySeg.ref_point.y-position.y,2));
 //		curPathSeg.seg_length= elapsed_time.toSec();
 		//ROS_INFO("sqrt((%2.2f- %2.2f)^2 + (%2.2f- %2.2f)^2) = %f",curPathSeg.ref_point.x,position.x,curPathSeg.ref_point.y,position.y,DistToGo);
+		
+		//If we're really close to our next point...
 		if(DistToGo<0.1 && curPathSeg.seg_type!=0){
 			ROS_INFO("Popped type: %d %d", curPathSeg.seg_type,segNum);
+			//If there are points in the poly line queue...
 			if(polyLinePoints.size()>0){
 				//last_potato = polyLinePoints.back();
+				//Clear the point
 				polyLinePoints.pop_back();
-			}
-			/*
-			if(polyLinePoints.size()==0){
-				//pathQueue.pop_back();
-				curPathSeg.seg_type=0;			
-			}
-			*/	
+			}	
 		}
 
 		mp.x = curPathSeg.ref_point.x;
